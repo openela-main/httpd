@@ -1,0 +1,92 @@
+commit 4c0e27d7bfbf46f14dfbd5d888e56c64ad8c8de5
+Author: Tomas Korbar <tkorbar@redhat.com>
+Date:   Mon Sep 19 13:22:27 2022 +0200
+
+    Backport refactor of SNI support to httpd-2.4.37
+
+diff --git a/modules/http2/mod_proxy_http2.c b/modules/http2/mod_proxy_http2.c
+index a7e0dcd..31ccd32 100644
+--- a/modules/http2/mod_proxy_http2.c
++++ b/modules/http2/mod_proxy_http2.c
+@@ -591,16 +591,6 @@ run_connect:
+         }
+         
+         if (!ctx->p_conn->data) {
+-            /* New conection: set a note on the connection what CN is
+-             * requested and what protocol we want */
+-            if (ctx->p_conn->ssl_hostname) {
+-                ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, ctx->owner, 
+-                              "set SNI to %s for (%s)", 
+-                              ctx->p_conn->ssl_hostname, 
+-                              ctx->p_conn->hostname);
+-                apr_table_setn(ctx->p_conn->connection->notes,
+-                               "proxy-request-hostname", ctx->p_conn->ssl_hostname);
+-            }
+             if (ctx->is_ssl) {
+                 apr_table_setn(ctx->p_conn->connection->notes,
+                                "proxy-request-alpn-protos", "h2");
+diff --git a/modules/proxy/mod_proxy_http.c b/modules/proxy/mod_proxy_http.c
+index 1b7bb81..c1c591a 100644
+--- a/modules/proxy/mod_proxy_http.c
++++ b/modules/proxy/mod_proxy_http.c
+@@ -2111,19 +2111,6 @@ static int proxy_http_handler(request_rec *r, proxy_worker *worker,
+             req->origin->keepalive = AP_CONN_CLOSE;
+         }
+ 
+-        /*
+-         * On SSL connections set a note on the connection what CN is
+-         * requested, such that mod_ssl can check if it is requested to do
+-         * so.
+-         *
+-         * https://github.com/apache/httpd/commit/7d272e2628b4ae05f68cdc74b070707250896a34
+-         */
+-        if (backend->ssl_hostname) {
+-            apr_table_setn(backend->connection->notes,
+-                           "proxy-request-hostname",
+-                           backend->ssl_hostname);
+-        }
+-
+         /* Step Four: Send the Request
+          * On the off-chance that we forced a 100-Continue as a
+          * kinda HTTP ping test, allow for retries
+diff --git a/modules/proxy/proxy_util.c b/modules/proxy/proxy_util.c
+index ec9a414..805820d 100644
+--- a/modules/proxy/proxy_util.c
++++ b/modules/proxy/proxy_util.c
+@@ -3261,6 +3261,16 @@ static int proxy_connection_create(const char *proxy_function,
+                          backend_addr, conn->hostname);
+             return HTTP_INTERNAL_SERVER_ERROR;
+         }
++        if (conn->ssl_hostname) {
++            /* Set a note on the connection about what CN is requested,
++             * such that mod_ssl can check if it is requested to do so.
++             */
++            ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, conn->connection, 
++                          "%s: set SNI to %s for (%s)", proxy_function,
++                          conn->ssl_hostname, conn->hostname);
++            apr_table_setn(conn->connection->notes, "proxy-request-hostname",
++                           conn->ssl_hostname);
++        }
+     }
+     else {
+         /* TODO: See if this will break FTP */
+diff --git a/modules/ssl/ssl_engine_io.c b/modules/ssl/ssl_engine_io.c
+index 4e3875a..9b4280c 100644
+--- a/modules/ssl/ssl_engine_io.c
++++ b/modules/ssl/ssl_engine_io.c
+@@ -1273,7 +1273,6 @@ static apr_status_t ssl_io_filter_handshake(ssl_filter_ctx_t *filter_ctx)
+             ((dc->proxy->ssl_check_peer_cn != FALSE) ||
+              (dc->proxy->ssl_check_peer_name == TRUE)) &&
+             hostname_note) {
+-            apr_table_unset(c->notes, "proxy-request-hostname");
+             if (!cert
+                 || modssl_X509_match_name(c->pool, cert, hostname_note,
+                                           TRUE, server) == FALSE) {
+@@ -1290,7 +1289,6 @@ static apr_status_t ssl_io_filter_handshake(ssl_filter_ctx_t *filter_ctx)
+ 
+             hostname = ssl_var_lookup(NULL, server, c, NULL,
+                                       "SSL_CLIENT_S_DN_CN");
+-            apr_table_unset(c->notes, "proxy-request-hostname");
+ 
+             /* Do string match or simplest wildcard match if that
+              * fails. */
