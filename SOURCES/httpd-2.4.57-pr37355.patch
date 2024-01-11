@@ -1,8 +1,8 @@
 diff --git a/modules/proxy/mod_proxy.c b/modules/proxy/mod_proxy.c
-index e599515..154ab21 100644
+index 537c3c2..596320d 100644
 --- a/modules/proxy/mod_proxy.c
 +++ b/modules/proxy/mod_proxy.c
-@@ -1200,11 +1200,20 @@ static int proxy_handler(request_rec *r)
+@@ -1460,11 +1460,20 @@ static int proxy_handler(request_rec *r)
                      /* handle the scheme */
                      ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01142)
                                    "Trying to run scheme_handler against proxy");
@@ -23,7 +23,7 @@ index e599515..154ab21 100644
                      /* Did the scheme handler process the request? */
                      if (access_status != DECLINED) {
                          const char *cl_a;
-@@ -1620,8 +1629,8 @@ static void *merge_proxy_dir_config(apr_pool_t *p, void *basev, void *addv)
+@@ -1902,8 +1911,8 @@ static void *merge_proxy_dir_config(apr_pool_t *p, void *basev, void *addv)
      return new;
  }
  
@@ -34,7 +34,7 @@ index e599515..154ab21 100644
  {
      server_rec *s = cmd->server;
      proxy_server_conf *conf =
-@@ -1679,19 +1688,24 @@ static const char *
+@@ -1961,19 +1970,24 @@ static const char *
      new->port = port;
      new->regexp = reg;
      new->use_regex = regex;
@@ -65,7 +65,7 @@ index e599515..154ab21 100644
  }
  
  PROXY_DECLARE(const char *) ap_proxy_de_socketfy(apr_pool_t *p, const char *url)
-@@ -2637,9 +2651,9 @@ static const command_rec proxy_cmds[] =
+@@ -3012,9 +3026,9 @@ static const command_rec proxy_cmds[] =
      "location, in regular expression syntax"),
      AP_INIT_FLAG("ProxyRequests", set_proxy_req, NULL, RSRC_CONF,
       "on if the true proxy requests should be accepted"),
@@ -78,10 +78,10 @@ index e599515..154ab21 100644
      AP_INIT_FLAG("ProxyPassInterpolateEnv", ap_set_flag_slot_char,
          (void*)APR_OFFSETOF(proxy_dir_conf, interpolate_env),
 diff --git a/modules/proxy/mod_proxy.h b/modules/proxy/mod_proxy.h
-index 895b937..538839f 100644
+index c51145e..eaf431d 100644
 --- a/modules/proxy/mod_proxy.h
 +++ b/modules/proxy/mod_proxy.h
-@@ -116,6 +116,7 @@ struct proxy_remote {
+@@ -121,6 +121,7 @@ struct proxy_remote {
      const char *protocol;   /* the scheme used to talk to this proxy */
      const char *hostname;   /* the hostname of this proxy */
      ap_regex_t *regexp;     /* compiled regex (if any) for the remote */
@@ -90,10 +90,10 @@ index 895b937..538839f 100644
      apr_port_t  port;       /* the port for this proxy */
  };
 diff --git a/modules/proxy/proxy_util.c b/modules/proxy/proxy_util.c
-index e7ffe33..50561a4 100644
+index caafde0..ea36465 100644
 --- a/modules/proxy/proxy_util.c
 +++ b/modules/proxy/proxy_util.c
-@@ -2474,11 +2474,14 @@ ap_proxy_determine_connection(apr_pool_t *p, request_rec *r,
+@@ -2708,11 +2708,14 @@ ap_proxy_determine_connection(apr_pool_t *p, request_rec *r,
                       * So let's make it configurable by env.
                       * The logic here is the same used in mod_proxy_http.
                       */
@@ -111,7 +111,7 @@ index e7ffe33..50561a4 100644
                          forward->proxy_auth = apr_pstrdup(conn->pool, proxy_auth);
                      }
                  }
-@@ -2714,7 +2717,8 @@ static apr_status_t send_http_connect(proxy_conn_rec *backend,
+@@ -2948,7 +2951,8 @@ static apr_status_t send_http_connect(proxy_conn_rec *backend,
      nbytes = apr_snprintf(buffer, sizeof(buffer),
                            "CONNECT %s:%d HTTP/1.0" CRLF,
                            forward->target_host, forward->target_port);
@@ -121,23 +121,23 @@ index e7ffe33..50561a4 100644
      if (forward->proxy_auth != NULL) {
          nbytes += apr_snprintf(buffer + nbytes, sizeof(buffer) - nbytes,
                                 "Proxy-Authorization: %s" CRLF,
-@@ -3627,6 +3631,7 @@ PROXY_DECLARE(int) ap_proxy_create_hdrbrgd(apr_pool_t *p,
-     apr_bucket *e;
-     int do_100_continue;
+@@ -3909,6 +3913,7 @@ PROXY_DECLARE(int) ap_proxy_create_hdrbrgd(apr_pool_t *p,
+     int force10 = 0, do_100_continue = 0;
      conn_rec *origin = p_conn->connection;
+     const char *host, *val;
 +    const char *creds;
      proxy_dir_conf *dconf = ap_get_module_config(r->per_dir_config, &proxy_module);
  
      /*
-@@ -3803,6 +3808,11 @@ PROXY_DECLARE(int) ap_proxy_create_hdrbrgd(apr_pool_t *p,
-         return HTTP_BAD_REQUEST;
-     }
+@@ -4131,6 +4136,11 @@ PROXY_DECLARE(int) ap_proxy_create_hdrbrgd(apr_pool_t *p,
+     /* run hook to fixup the request we are about to send */
+     proxy_run_fixups(r);
  
 +    creds = apr_table_get(r->notes, "proxy-basic-creds");
 +    if (creds) {
 +        apr_table_mergen(r->headers_in, "Proxy-Authorization", creds);
 +    }
 +
-     /* send request headers */
-     headers_in_array = apr_table_elts(r->headers_in);
-     headers_in = (const apr_table_entry_t *) headers_in_array->elts;
+     /* We used to send `Host: ` always first, so let's keep it that
+      * way. No telling which legacy backend is relying on this.
+      * If proxy_run_fixups() changed the value, use it (though removal

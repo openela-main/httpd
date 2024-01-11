@@ -12,8 +12,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.53
-Release: 11%{?dist}.5
+Version: 2.4.57
+Release: 5%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -73,29 +73,25 @@ Patch21: httpd-2.4.48-r1842929+.patch
 Patch22: httpd-2.4.43-mod_systemd.patch
 Patch23: httpd-2.4.48-export.patch
 Patch24: httpd-2.4.43-corelimit.patch
-Patch25: httpd-2.4.43-selinux.patch
-Patch26: httpd-2.4.43-gettid.patch
+Patch25: httpd-2.4.57-selinux.patch
+Patch26: httpd-2.4.57-gettid.patch
 Patch27: httpd-2.4.53-icons.patch
 Patch30: httpd-2.4.43-cachehardmax.patch
 Patch34: httpd-2.4.43-socket-activation.patch
 Patch38: httpd-2.4.43-sslciphdefault.patch
 Patch39: httpd-2.4.43-sslprotdefault.patch
-Patch40: httpd-2.4.43-r1861269.patch
 Patch41: httpd-2.4.43-r1861793+.patch
 Patch42: httpd-2.4.48-r1828172+.patch
 Patch45: httpd-2.4.43-logjournal.patch
 Patch46: httpd-2.4.48-proxy-ws-idle-timeout.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1949969
-Patch47: httpd-2.4.43-pr37355.patch
+Patch47: httpd-2.4.57-pr37355.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1949606
 Patch48: httpd-2.4.46-freebind.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1950021
 Patch49: httpd-2.4.48-ssl-proxy-chains.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2004143
-Patch50: httpd-2.4.48-r1825120.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2079939
-# backported regression fix
-Patch51: httpd-2.4.53-r1901199.patch
+Patch50: httpd-2.4.57-r1825120.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2065677
 Patch52: httpd-2.4.53-separate-systemd-fns.patch
 
@@ -114,32 +110,17 @@ Patch66: httpd-2.4.51-r1892413+.patch
 Patch67: httpd-2.4.51-r1811831.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2098056
 Patch68: httpd-2.4.53-r1878890.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2151313
-Patch69: httpd-2.4.53-proxy-util-loglevel.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2186645
+Patch69: httpd-2.4.57-covscan.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2222001
+Patch70: httpd-2.4.57-mod_status-duplicate-key.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2217726
+Patch71: httpd-2.4.57-davenoent.patch
+
 
 # Security fixes
-# https://bugzilla.redhat.com/show_bug.cgi?id=2094997
-Patch200: httpd-2.4.53-CVE-2022-26377.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095006
-Patch201: httpd-2.4.53-CVE-2022-28615.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095020
-Patch202: httpd-2.4.53-CVE-2022-31813.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095002
-Patch203: httpd-2.4.53-CVE-2022-28614.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095012
-Patch204: httpd-2.4.53-CVE-2022-29404.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095015
-Patch205: httpd-2.4.53-CVE-2022-30522.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095018
-Patch206: httpd-2.4.53-CVE-2022-30556.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2161773
-Patch207: httpd-2.4.53-CVE-2022-37436.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2161774
-Patch208: httpd-2.4.53-CVE-2006-20001.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2161777
-Patch209: httpd-2.4.53-CVE-2022-36760.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2176209
-Patch210: httpd-2.4.53-CVE-2023-25690.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=...
+# Patch200: ...
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -170,7 +151,7 @@ Requires: httpd-filesystem = %{version}-%{release}
 Requires(pre): httpd-filesystem
 Conflicts: apr < 1.5.0-1
 Conflicts: httpd < 2.4.53-3
-Conflicts: mod_http2 < 1.15.19-4%{?dist}.3
+Conflicts: mod_http2 < 1.15.19-3
 Obsoletes: mod_proxy_uwsgi < 2.0.17.1-2
 
 %description core
@@ -288,7 +269,6 @@ written in the Lua programming language.
 %patch34 -p1 -b .socketactivation
 %patch38 -p1 -b .sslciphdefault
 %patch39 -p1 -b .sslprotdefault
-%patch40 -p1 -b .r1861269
 %patch41 -p1 -b .r1861793+
 %patch42 -p1 -b .r1828172+
 %patch45 -p1 -b .logjournal
@@ -297,7 +277,6 @@ written in the Lua programming language.
 %patch48 -p1 -b .freebind
 %patch49 -p1 -b .ssl-proxy-chains
 %patch50 -p1 -b .r1825120
-%patch51 -p1 -b .r1901199
 %patch52 -p1 -b .separatesystemd
 
 %patch60 -p1 -b .enable-sslv3
@@ -307,19 +286,10 @@ written in the Lua programming language.
 %patch66 -p1 -b .r1892413+
 %patch67 -p1 -b .r1811831
 %patch68 -p1 -b .r1878890
-%patch69 -p1 -b .proxyutil-loglevel
+%patch69 -p1 -b .covstan
+%patch70 -p1 -b .duplicate-key
+%patch71 -p1 -b .davenoent
 
-%patch200 -p1 -b .CVE-2022-26377
-%patch201 -p1 -b .CVE-2022-28615
-%patch202 -p1 -b .CVE-2022-31813
-%patch203 -p1 -b .CVE-2022-28614
-%patch204 -p1 -b .CVE-2022-29404
-%patch205 -p1 -b .CVE-2022-30522
-%patch206 -p1 -b .CVE-2022-30556
-%patch207 -p1 -b .CVE-2022-37436
-%patch208 -p1 -b .CVE-2006-20001
-%patch209 -p1 -b .CVE-2022-36760
-%patch210 -p1 -b .CVE-2023-25690
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -423,6 +393,7 @@ export LYNX_PATH=/usr/bin/links
         --enable-cgid --enable-cgi \
         --enable-cgid-fdpassing \
         --enable-authn-anon --enable-authn-alias \
+        --enable-authnz-fcgi \
         --enable-systemd \
         --disable-imagemap --disable-file-cache \
         --disable-http2 \
@@ -879,12 +850,24 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Fri Apr 28 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.53-11.5
-- Resolves: #2190324 - mod_rewrite regression with CVE-2023-25690
+* Thu Jul 20 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.57-5
+- Fix issue found by covscan
+- Related: #2222001
 
-* Sat Mar 18 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.53-11.4
-- Resolves: #2177752 - CVE-2023-25690 httpd: HTTP request splitting with
-  mod_rewrite and mod_proxy 
+* Tue Jul 18 2023 Joe Orton <jorton@redhat.com> - 2.4.57-4
+- Resolves: #2217726 - Make PROPFIND tolerant of deletion race
+
+* Tue Jul 11 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.57-3
+- Resolves: #2222001 - mod_status lists BusyWorkers IdleWorkers keys twice
+
+* Fri Apr 14 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-2
+- Resolves: #2186645 - Fix issue found by covscan in httpd package
+- Resolves: #2173295 - Include Apache httpd module mod_authnz_fcgi
+
+* Tue Apr 11 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-1
+- Resolves: #2184403 - rebase httpd to 2.4.57
+- Resolves: #2177753 - CVE-2023-25690 httpd: HTTP request splitting with
+  mod_rewrite and mod_proxy
 
 * Mon Jan 30 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.53-11
 - Resolves: #2162500 - CVE-2006-20001 httpd: mod_dav: out-of-bounds read/write

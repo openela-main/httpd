@@ -1,22 +1,8 @@
-From d4e5b6e1e5585d341d1e51f1ddc637c099111076 Mon Sep 17 00:00:00 2001
-From: Joe Orton <jorton@redhat.com>
-Date: Tue, 7 Jul 2020 09:48:01 +0100
-Subject: [PATCH] Check and use gettid() directly with glibc 2.30+.
-
-* configure.in: Check for gettid() and define HAVE_SYS_GETTID if
-  gettid() is only usable via syscall().
-
-* server/log.c (log_tid): Use gettid() directly if available.
----
- configure.in | 14 +++++++++-----
- server/log.c |  8 ++++++--
- 2 files changed, 15 insertions(+), 7 deletions(-)
-
 diff --git a/configure.in b/configure.in
-index 423d58d4b9a..60cbf7b7f81 100644
---- httpd-2.4.43/configure.in.gettid
-+++ httpd-2.4.43/configure.in
-@@ -478,7 +500,8 @@
+index a3c994b..9a4351a 100644
+--- a/configure.in
++++ b/configure.in
+@@ -524,7 +524,8 @@ prctl \
  timegm \
  getpgid \
  fopen64 \
@@ -26,7 +12,7 @@ index 423d58d4b9a..60cbf7b7f81 100644
  )
  
  dnl confirm that a void pointer is large enough to store a long integer
-@@ -489,16 +512,19 @@
+@@ -535,16 +536,19 @@ AC_CHECK_LIB(selinux, is_selinux_enabled, [
     APR_ADDTO(HTTPD_LIBS, [-lselinux])
  ])
  
@@ -50,8 +36,10 @@ index 423d58d4b9a..60cbf7b7f81 100644
  fi
  
  dnl ## Check for the tm_gmtoff field in struct tm to get the timezone diffs
---- httpd-2.4.43/server/log.c.gettid
-+++ httpd-2.4.43/server/log.c
+diff --git a/server/log.c b/server/log.c
+index cc04c38..ed3b920 100644
+--- a/server/log.c
++++ b/server/log.c
 @@ -55,7 +55,7 @@
  #include "ap_mpm.h"
  #include "ap_listen.h"
@@ -61,7 +49,7 @@ index 423d58d4b9a..60cbf7b7f81 100644
  #include <sys/syscall.h>
  #include <sys/types.h>
  #endif
-@@ -625,14 +625,18 @@
+@@ -627,14 +627,18 @@ static int log_tid(const ap_errorlog_info *info, const char *arg,
  #if APR_HAS_THREADS
      int result;
  #endif
@@ -82,7 +70,7 @@ index 423d58d4b9a..60cbf7b7f81 100644
  #if APR_HAS_THREADS
      if (ap_mpm_query(AP_MPMQ_IS_THREADED, &result) == APR_SUCCESS
          && result != AP_MPMQ_NOT_SUPPORTED)
-@@ -966,7 +970,7 @@
+@@ -968,7 +972,7 @@ static int do_errorlog_default(const ap_errorlog_info *info, char *buf,
  #if APR_HAS_THREADS
          field_start = len;
          len += cpystrn(buf + len, ":tid ", buflen - len);
