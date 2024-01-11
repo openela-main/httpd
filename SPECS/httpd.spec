@@ -3,7 +3,7 @@
 %define suexec_caller apache
 %define mmn 20120211
 %define mmnisa %{mmn}%{__isa_name}%{__isa_bits}
-%define vstring %(source /etc/os-release; echo ${REDHAT_SUPPORT_PRODUCT})
+%define vstring %(source /etc/os-release; echo ${NAME})
 %if 0%{?fedora} > 26 || 0%{?rhel} > 7
 %global mpm event
 %else
@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 56%{?dist}.7
+Release: 62%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -165,6 +165,10 @@ Patch89: httpd-2.4.37-r1862410.patch
 Patch90: httpd-2.4.37-hcheck-mem-issues.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2017543
 Patch91: httpd-2.4.37-add-SNI-support.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2159603
+Patch92: httpd-2.4.37-mod_status-duplicate-key.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2221083
+Patch93: httpd-2.4.37-r1885607.patch
 
 # Security fixes
 Patch200: httpd-2.4.37-r1851471.patch
@@ -431,6 +435,8 @@ interface for storing and accessing per-user session data.
 %patch89 -p1 -b .r1862410
 %patch90 -p1 -b .hcheck-mem-issues
 %patch91 -p1 -b .SNI
+%patch92 -p1 -b .mod_status-dupl
+%patch93 -p1 -b .r1885607
 
 %patch200 -p1 -b .r1851471
 %patch201 -p1 -b .CVE-2019-0211
@@ -977,11 +983,33 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Wed Aug 30 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-56.7
-- Resolves: #2236177 - CVE-2023-27522 httpd:2.4/httpd: mod_proxy_uwsgi HTTP
+* Thu Aug 17 2023 Johnny Hughes <jhughes@redhat.com> - 2.4.37-62
+- change for CentOS Stream Branding
+
+* Thu Jul 27 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-62
+- Resolves: #2221083 - Apache Bug 57087: mod_proxy_fcgi doesn't send cgi 
+  CONTENT_LENGTH variable when the client request used Transfer-Encoding:chunked
+
+* Thu Jul 20 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.37-61
+- Fix issue found by covscan
+- Related: #2159603
+
+* Mon Jul 17 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.37-60
+- Another rebuild because of mistake in workflow
+- Related: #2159603
+
+* Mon Jul 17 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.37-59
+- Rebuild because of mistake in workflow
+- Related: #2159603
+
+* Mon Jul 17 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.37-58
+- Resolves: #2159603 - mod_status lists BusyWorkers IdleWorkers keys twice
+
+* Thu May 25 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-57
+- Resolves: #2176723 - CVE-2023-27522 httpd:2.4/httpd: mod_proxy_uwsgi HTTP
   response splitting
 
-* Thu Apr 27 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-56.6
+* Thu Apr 27 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-56.5
 - Resolves: #2190133 - mod_rewrite regression with CVE-2023-25690
 
 * Sat Mar 18 2023 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-56.4
