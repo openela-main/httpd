@@ -1,0 +1,108 @@
+--- a/modules/dav/main/mod_dav.c
++++ b/modules/dav/main/mod_dav.c
+@@ -557,6 +557,7 @@
+     dav_begin_multistatus(bb, r, status, namespaces);
+ 
+     apr_pool_create(&subpool, r->pool);
++    apr_pool_tag(subpool, "mod_dav-multistatus");
+ 
+     for (; first != NULL; first = first->next) {
+       apr_pool_clear(subpool);
+@@ -1980,8 +1981,9 @@
+     ** Note: we cast to lose the "const". The propdb won't try to change
+     ** the resource, however, since we are opening readonly.
+     */
+-    err = dav_open_propdb(ctx->r, ctx->w.lockdb, wres->resource, 1,
+-                          ctx->doc ? ctx->doc->namespaces : NULL, &propdb);
++    err = dav_popen_propdb(ctx->scratchpool,
++                           ctx->r, ctx->w.lockdb, wres->resource, 1,
++                           ctx->doc ? ctx->doc->namespaces : NULL, &propdb);
+     if (err != NULL) {
+         /* ### do something with err! */
+ 
+--- a/modules/dav/main/mod_dav.h
++++ b/modules/dav/main/mod_dav.h
+@@ -1590,6 +1590,16 @@
+     apr_array_header_t *ns_xlate,
+     dav_propdb **propdb);
+ 
++DAV_DECLARE(dav_error *) dav_popen_propdb(
++    apr_pool_t *p,
++    request_rec *r,
++    dav_lockdb *lockdb,
++    const dav_resource *resource,
++    int ro,
++    apr_array_header_t *ns_xlate,
++    dav_propdb **propdb);
++
++
+ DAV_DECLARE(void) dav_close_propdb(dav_propdb *db);
+ 
+ DAV_DECLARE(dav_get_props_result) dav_get_props(
+--- a/modules/dav/main/props.c
++++ b/modules/dav/main/props.c
+@@ -323,7 +323,7 @@
+ {
+     /* need to escape the uri that's in the resource struct because during
+      * the property walker it's not encoded. */
+-    const char *e_uri = ap_escape_uri(propdb->resource->pool,
++    const char *e_uri = ap_escape_uri(propdb->p,
+                                       propdb->resource->uri);
+ 
+     /* perform a "GET" on the resource's URI (note that the resource
+@@ -524,8 +524,21 @@
+                                         apr_array_header_t * ns_xlate,
+                                         dav_propdb **p_propdb)
+ {
+-    dav_propdb *propdb = apr_pcalloc(r->pool, sizeof(*propdb));
++    return dav_popen_propdb(r->pool, r, lockdb, resource, ro, ns_xlate, p_propdb);
++}
+ 
++DAV_DECLARE(dav_error *)dav_popen_propdb(apr_pool_t *p,
++                                         request_rec *r, dav_lockdb *lockdb,
++                                         const dav_resource *resource,
++                                         int ro,
++                                         apr_array_header_t * ns_xlate,
++                                         dav_propdb **p_propdb)
++{
++    dav_propdb *propdb = NULL;
++
++    propdb = apr_pcalloc(p, sizeof(*propdb));
++    propdb->p = p;
++
+     *p_propdb = NULL;
+ 
+ #if DAV_DEBUG
+@@ -537,7 +550,6 @@
+ #endif
+ 
+     propdb->r = r;
+-    apr_pool_create(&propdb->p, r->pool);
+     propdb->resource = resource;
+     propdb->ns_xlate = ns_xlate;
+ 
+@@ -562,10 +574,10 @@
+         (*propdb->db_hooks->close)(propdb->db);
+     }
+ 
+-    /* Currently, mod_dav's pool usage doesn't allow clearing this pool. */
+-#if 0
+-    apr_pool_destroy(propdb->p);
+-#endif
++    if (propdb->subreq) {
++        ap_destroy_sub_req(propdb->subreq);
++        propdb->subreq = NULL;
++    }
+ }
+ 
+ DAV_DECLARE(dav_get_props_result) dav_get_allprops(dav_propdb *propdb,
+@@ -739,7 +751,8 @@
+         */
+ 
+         if (elem->priv == NULL) {
+-            elem->priv = apr_pcalloc(propdb->p, sizeof(*priv));
++            /* elem->priv outlives propdb->p. Hence use the request pool */
++            elem->priv = apr_pcalloc(propdb->r->pool, sizeof(*priv));
+         }
+         priv = elem->priv;
+ 
