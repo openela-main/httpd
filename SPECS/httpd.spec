@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.57
-Release: 5%{?dist}
+Release: 8%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -94,6 +94,10 @@ Patch49: httpd-2.4.48-ssl-proxy-chains.patch
 Patch50: httpd-2.4.57-r1825120.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2065677
 Patch52: httpd-2.4.53-separate-systemd-fns.patch
+# https://issues.redhat.com/browse/RHEL-5071
+Patch53: httpd-2.4.57-r1912477+.patch
+# https://issues.redhat.com/browse/RHEL-6600
+Patch54: httpd-2.4.57-r1912081.patch
 
 
 # Bug fixes
@@ -116,11 +120,15 @@ Patch69: httpd-2.4.57-covscan.patch
 Patch70: httpd-2.4.57-mod_status-duplicate-key.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2217726
 Patch71: httpd-2.4.57-davenoent.patch
-
+# https://issues.redhat.com/browse/RHEL-17686
+Patch72: httpd-2.4.57-r1884505+.patch
 
 # Security fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=...
-# Patch200: ...
+#
+# https://bugzilla.redhat.com/show_bug.cgi?id=2245332
+Patch200: httpd-2.4.57-CVE-2023-31122.patch
+
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -278,6 +286,8 @@ written in the Lua programming language.
 %patch49 -p1 -b .ssl-proxy-chains
 %patch50 -p1 -b .r1825120
 %patch52 -p1 -b .separatesystemd
+%patch53 -p1 -b .r1912477+
+%patch54 -p1 -b .r1912081
 
 %patch60 -p1 -b .enable-sslv3
 %patch61 -p1 -b .htcacheclean-dont-break
@@ -289,7 +299,9 @@ written in the Lua programming language.
 %patch69 -p1 -b .covstan
 %patch70 -p1 -b .duplicate-key
 %patch71 -p1 -b .davenoent
+%patch72 -p1 -b .r1884505+
 
+%patch200 -p1 -b .CVE-2023-31122
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -850,6 +862,20 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Wed Feb  7 2024 Joe Orton <jorton@redhat.com> - 2.4.57-8
+- mod_xml2enc: fix media type handling
+  Resolves: RHEL-17686
+- mod_dav: add DavBasePath
+  Resolves: RHEL-6600
+
+* Mon Feb 05 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-7
+- Resolves: RHEL-14447 - httpd: mod_macro: out-of-bounds read
+  vulnerability (CVE-2023-31122)
+
+* Wed Oct  4 2023 Joe Orton <jorton@redhat.com> - 2.4.57-6
+- Resolves: RHEL-5071 - mod_dav_fs: add DavLockDBType
+- mod_dav_fs: add global mutex around lockdb interaction
+
 * Thu Jul 20 2023 Tomas Korbar <tkorbar@redhat.com> - 2.4.57-5
 - Fix issue found by covscan
 - Related: #2222001
