@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 62%{?dist}
+Release: 64%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -169,6 +169,8 @@ Patch91: httpd-2.4.37-add-SNI-support.patch
 Patch92: httpd-2.4.37-mod_status-duplicate-key.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2221083
 Patch93: httpd-2.4.37-r1885607.patch
+# https://issues.redhat.com/browse/RHEL-14321
+Patch94: httpd-2.4.57-r1884505+.patch
 
 # Security fixes
 Patch200: httpd-2.4.37-r1851471.patch
@@ -254,6 +256,8 @@ Patch237: httpd-2.4.37-CVE-2022-36760.patch
 Patch238: httpd-2.4.37-CVE-2023-25690.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2176211
 Patch239: httpd-2.4.37-CVE-2023-27522.patch
+# https://issues.redhat.com/browse/RHEL-14448
+Patch240: httpd-2.4.37-CVE-2023-31122.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -437,6 +441,7 @@ interface for storing and accessing per-user session data.
 %patch91 -p1 -b .SNI
 %patch92 -p1 -b .mod_status-dupl
 %patch93 -p1 -b .r1885607
+%patch94 -p1 -b .r1884505+
 
 %patch200 -p1 -b .r1851471
 %patch201 -p1 -b .CVE-2019-0211
@@ -478,6 +483,7 @@ interface for storing and accessing per-user session data.
 %patch237 -p1 -b .CVE-2022-36760
 %patch238 -p1 -b .CVE-2023-25690
 %patch239 -p1 -b .CVE-2023-27522
+%patch240 -p1 -b .CVE-2023-31122
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -983,6 +989,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Fri Feb 16 2024 Joe Orton <jorton@redhat.com> - 2.4.37-64
+- Resolves: RHEL-14448 - httpd: mod_macro: out-of-bounds read
+  vulnerability (CVE-2023-31122)
+
+* Wed Feb 14 2024 Joe Orton <jorton@redhat.com> - 2.4.37-63
+- mod_xml2enc: fix media type handling
+  Resolves: RHEL-14321
+
 * Thu Aug 17 2023 Johnny Hughes <jhughes@redhat.com> - 2.4.37-62
 - change for CentOS Stream Branding
 
