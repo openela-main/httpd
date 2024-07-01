@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 64%{?dist}
+Release: 65%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -258,6 +258,8 @@ Patch238: httpd-2.4.37-CVE-2023-25690.patch
 Patch239: httpd-2.4.37-CVE-2023-27522.patch
 # https://issues.redhat.com/browse/RHEL-14448
 Patch240: httpd-2.4.37-CVE-2023-31122.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2273491
+Patch241: httpd-2.4.37-CVE-2023-38709.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -484,6 +486,7 @@ interface for storing and accessing per-user session data.
 %patch238 -p1 -b .CVE-2023-25690
 %patch239 -p1 -b .CVE-2023-27522
 %patch240 -p1 -b .CVE-2023-31122
+%patch241 -p1 -b .CVE-2023-38709
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -989,6 +992,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Wed Jun 12 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65
+- Resolves: RHEL-31857 - httpd:2.4/httpd: HTTP response
+  splitting (CVE-2023-38709)
+
 * Fri Feb 16 2024 Joe Orton <jorton@redhat.com> - 2.4.37-64
 - Resolves: RHEL-14448 - httpd: mod_macro: out-of-bounds read
   vulnerability (CVE-2023-31122)
