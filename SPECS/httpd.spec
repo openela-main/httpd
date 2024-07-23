@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}
+Release: 65%{?dist}.1
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -260,6 +260,16 @@ Patch239: httpd-2.4.37-CVE-2023-27522.patch
 Patch240: httpd-2.4.37-CVE-2023-31122.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2273491
 Patch241: httpd-2.4.37-CVE-2023-38709.patch
+# CVE-2024-38474 and CVE-2024-38475 fixed in one patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295013
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295014
+Patch242: httpd-2.4.37-CVE-2024-38474+.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295012
+Patch243: httpd-2.4.37-CVE-2024-38473.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295016
+Patch244: httpd-2.4.37-CVE-2024-38477.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295022
+Patch245: httpd-2.4.37-CVE-2024-39573.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -487,6 +497,10 @@ interface for storing and accessing per-user session data.
 %patch239 -p1 -b .CVE-2023-27522
 %patch240 -p1 -b .CVE-2023-31122
 %patch241 -p1 -b .CVE-2023-38709
+%patch242 -p1 -b .CVE-2024-38474+
+%patch243 -p1 -b .CVE-2024-38473
+%patch244 -p1 -b .CVE-2024-38477
+%patch245 -p1 -b .CVE-2024-39573
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -992,6 +1006,18 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Jul 11 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.1
+- Resolves: RHEL-45812 - httpd:2.4/httpd: Substitution encoding issue
+  in mod_rewrite (CVE-2024-38474)
+- Resolves: RHEL-45785 - httpd:2.4/httpd: Encoding problem in
+  mod_proxy (CVE-2024-38473)
+- Resolves: RHEL-45777 - httpd:2.4/httpd: Improper escaping of output
+  in mod_rewrite (CVE-2024-38475)
+- Resolves: RHEL-45758 - httpd:2.4/httpd: null pointer dereference
+  in mod_proxy (CVE-2024-38477)
+- Resolves: RHEL-45743 - httpd:2.4/httpd: Potential SSRF
+  in mod_rewrite (CVE-2024-39573)
+
 * Wed Jun 12 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65
 - Resolves: RHEL-31857 - httpd:2.4/httpd: HTTP response
   splitting (CVE-2023-38709)
