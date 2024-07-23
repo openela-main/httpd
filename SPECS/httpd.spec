@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.57
-Release: 8%{?dist}
+Release: 11%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -128,6 +128,16 @@ Patch72: httpd-2.4.57-r1884505+.patch
 #
 # https://bugzilla.redhat.com/show_bug.cgi?id=2245332
 Patch200: httpd-2.4.57-CVE-2023-31122.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295016
+Patch201: httpd-2.4.57-CVE-2024-38477.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295022
+Patch202: httpd-2.4.57-CVE-2024-39573.patch
+# CVE-2024-38474 and CVE-2024-38475 fixed in one patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295013
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295014
+Patch204: httpd-2.4.57-CVE-2024-38474+.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295012
+Patch206: httpd-2.4.57-CVE-2024-38473.patch
 
 
 License: ASL 2.0
@@ -302,6 +312,10 @@ written in the Lua programming language.
 %patch72 -p1 -b .r1884505+
 
 %patch200 -p1 -b .CVE-2023-31122
+%patch201 -p1 -b .CVE-2024-38477
+%patch202 -p1 -b .CVE-2024-39573
+%patch204 -p1 -b .CVE-2024-38474+
+%patch206 -p1 -b .CVE-2024-38473
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -862,6 +876,19 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Jul 04 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-11
+- Resolves: RHEL-45792 -  httpd: Encoding problem in
+  mod_proxy (CVE-2024-38473)
+
+* Wed Jul 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-9
+- Resolves: RHEL-45766 -  httpd: null pointer dereference in
+  mod_proxy (CVE-2024-38477)
+- Resolves: RHEL-45749 - httpd: Potential SSRF in mod_rewrite (CVE-2024-39573)
+- Resolves: RHEL-45818 - httpd: Substitution encoding issue in
+  mod_rewrite (CVE-2024-38474)
+- Resolves: RHEL-45771 - httpd: Improper escaping of output in
+  mod_rewrite (CVE-2024-38475)
+
 * Wed Feb  7 2024 Joe Orton <jorton@redhat.com> - 2.4.57-8
 - mod_xml2enc: fix media type handling
   Resolves: RHEL-17686
