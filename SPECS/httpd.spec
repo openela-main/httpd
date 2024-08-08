@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.57
-Release: 11%{?dist}
+Release: 11%{?dist}.1
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -99,7 +99,6 @@ Patch53: httpd-2.4.57-r1912477+.patch
 # https://issues.redhat.com/browse/RHEL-6600
 Patch54: httpd-2.4.57-r1912081.patch
 
-
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
 Patch60: httpd-2.4.43-enable-sslv3.patch
@@ -122,6 +121,8 @@ Patch70: httpd-2.4.57-mod_status-duplicate-key.patch
 Patch71: httpd-2.4.57-davenoent.patch
 # https://issues.redhat.com/browse/RHEL-17686
 Patch72: httpd-2.4.57-r1884505+.patch
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=69197
+Patch73: httpd-2.4.57-r1919325.patch
 
 # Security fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=...
@@ -138,7 +139,12 @@ Patch202: httpd-2.4.57-CVE-2024-39573.patch
 Patch204: httpd-2.4.57-CVE-2024-38474+.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2295012
 Patch206: httpd-2.4.57-CVE-2024-38473.patch
-
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295015
+Patch207: httpd-2.4.57-CVE-2024-38476.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2297362
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295761
+# part of CVE-2024-38476 fix
+Patch208: httpd-2.4.57-CVE-2024-39884+.patch
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -315,7 +321,11 @@ written in the Lua programming language.
 %patch201 -p1 -b .CVE-2024-38477
 %patch202 -p1 -b .CVE-2024-39573
 %patch204 -p1 -b .CVE-2024-38474+
+# CVE-2024-38474 regression fix
+%patch73 -p1 -b .r1919325
 %patch206 -p1 -b .CVE-2024-38473
+%patch207 -p1 -b .CVE-2024-38476
+%patch208 -p1 -b .CVE-2024-39884+
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -876,6 +886,11 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Mon Aug 05 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-11.1
+- Resolves: RHEL-46047 - httpd: Security issues via backend applications whose
+  response headers are malicious or exploitable (CVE-2024-38476)
+- Resolves: RHEL-53021 - Regression introduced by CVE-2024-38474 fix
+
 * Thu Jul 04 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-11
 - Resolves: RHEL-45792 -  httpd: Encoding problem in
   mod_proxy (CVE-2024-38473)
