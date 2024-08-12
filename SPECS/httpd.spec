@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.1
+Release: 65%{?dist}.2
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -171,6 +171,8 @@ Patch92: httpd-2.4.37-mod_status-duplicate-key.patch
 Patch93: httpd-2.4.37-r1885607.patch
 # https://issues.redhat.com/browse/RHEL-14321
 Patch94: httpd-2.4.57-r1884505+.patch
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=69197
+Patch95: httpd-2.4.37-r1919325.patch
 
 # Security fixes
 Patch200: httpd-2.4.37-r1851471.patch
@@ -270,6 +272,11 @@ Patch243: httpd-2.4.37-CVE-2024-38473.patch
 Patch244: httpd-2.4.37-CVE-2024-38477.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2295022
 Patch245: httpd-2.4.37-CVE-2024-39573.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295015
+Patch246: httpd-2.4.37-CVE-2024-38476.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2297362
+# https://bugzilla.redhat.com/show_bug.cgi?id=2295761
+Patch247: httpd-2.4.37-CVE-2024-39884+.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -501,6 +508,11 @@ interface for storing and accessing per-user session data.
 %patch243 -p1 -b .CVE-2024-38473
 %patch244 -p1 -b .CVE-2024-38477
 %patch245 -p1 -b .CVE-2024-39573
+
+# CVE-2024-38474 regression fix
+%patch95 -p1 -b .r1919325
+%patch246 -p1 -b .CVE-2024-38476
+%patch247 -p1 -b .CVE-2024-39884+
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -1006,6 +1018,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue Aug 06 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.2
+- Resolves: RHEL-46040 - httpd:2.4/httpd: Security issues via backend
+  applications whose response headers are malicious or exploitable (CVE-2024-38476)
+- Resolves: RHEL-53022 - Regression introduced by CVE-2024-38474 fix
+
 * Thu Jul 11 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.1
 - Resolves: RHEL-45812 - httpd:2.4/httpd: Substitution encoding issue
   in mod_rewrite (CVE-2024-38474)
