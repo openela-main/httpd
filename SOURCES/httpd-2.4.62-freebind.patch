@@ -1,5 +1,5 @@
 diff --git a/docs/manual/mod/mpm_common.html.en b/docs/manual/mod/mpm_common.html.en
-index e7af21d..01d54b7 100644
+index d7a2fea..c911a4e 100644
 --- a/docs/manual/mod/mpm_common.html.en
 +++ b/docs/manual/mod/mpm_common.html.en
 @@ -42,6 +42,7 @@ more than one multi-processing module (MPM)</td></tr>
@@ -43,10 +43,10 @@ index e7af21d..01d54b7 100644
  <div class="directive-section"><h2><a name="ListenBackLog" id="ListenBackLog">ListenBackLog</a> <a name="listenbacklog" id="listenbacklog">Directive</a></h2>
  <table class="directive">
 diff --git a/include/ap_listen.h b/include/ap_listen.h
-index 58c2574..1a53292 100644
+index d5ed968..be1a60c 100644
 --- a/include/ap_listen.h
 +++ b/include/ap_listen.h
-@@ -137,6 +137,9 @@ AP_DECLARE_NONSTD(const char *) ap_set_listenbacklog(cmd_parms *cmd, void *dummy
+@@ -138,6 +138,9 @@ AP_DECLARE_NONSTD(const char *) ap_set_listenbacklog(cmd_parms *cmd, void *dummy
  AP_DECLARE_NONSTD(const char *) ap_set_listencbratio(cmd_parms *cmd, void *dummy, const char *arg);
  AP_DECLARE_NONSTD(const char *) ap_set_listener(cmd_parms *cmd, void *dummy,
                                                  int argc, char *const argv[]);
@@ -56,7 +56,7 @@ index 58c2574..1a53292 100644
  AP_DECLARE_NONSTD(const char *) ap_set_send_buffer_size(cmd_parms *cmd, void *dummy,
                                                          const char *arg);
  AP_DECLARE_NONSTD(const char *) ap_set_receive_buffer_size(cmd_parms *cmd,
-@@ -150,6 +153,8 @@ AP_INIT_TAKE1("ListenCoresBucketsRatio", ap_set_listencbratio, NULL, RSRC_CONF,
+@@ -160,6 +163,8 @@ AP_INIT_TAKE1("ListenCoresBucketsRatio", ap_set_listencbratio, NULL, RSRC_CONF,
    "Ratio between the number of CPU cores (online) and the number of listeners buckets"), \
  AP_INIT_TAKE_ARGV("Listen", ap_set_listener, NULL, RSRC_CONF, \
    "A port number or a numeric IP address and a port number, and an optional protocol"), \
@@ -66,10 +66,10 @@ index 58c2574..1a53292 100644
    "Send buffer size in bytes"), \
  AP_INIT_TAKE1("ReceiveBufferSize", ap_set_receive_buffer_size, NULL, \
 diff --git a/server/listen.c b/server/listen.c
-index e2e028a..6ef664b 100644
+index 2a4e87a..280bbe7 100644
 --- a/server/listen.c
 +++ b/server/listen.c
-@@ -63,6 +63,7 @@ static int ap_listenbacklog;
+@@ -60,6 +60,7 @@ static int ap_listenbacklog;
  static int ap_listencbratio;
  static int send_buffer_size;
  static int receive_buffer_size;
@@ -77,7 +77,7 @@ index e2e028a..6ef664b 100644
  #ifdef HAVE_SYSTEMD
  static int use_systemd = -1;
  #endif
-@@ -162,6 +163,21 @@ static apr_status_t make_sock(apr_pool_t *p, ap_listen_rec *server, int do_bind_
+@@ -159,6 +160,21 @@ static apr_status_t make_sock(apr_pool_t *p, ap_listen_rec *server, int do_bind_
      }
  #endif
  
@@ -99,7 +99,7 @@ index e2e028a..6ef664b 100644
      if (do_bind_listen) {
  #if APR_HAVE_IPV6
          if (server->bind_addr->family == APR_INET6) {
-@@ -956,6 +972,7 @@ AP_DECLARE(void) ap_listen_pre_config(void)
+@@ -971,6 +987,7 @@ AP_DECLARE(void) ap_listen_pre_config(void)
      }
  }
  
@@ -107,8 +107,8 @@ index e2e028a..6ef664b 100644
  AP_DECLARE_NONSTD(const char *) ap_set_listener(cmd_parms *cmd, void *dummy,
                                                  int argc, char *const argv[])
  {
-@@ -1016,6 +1033,14 @@ AP_DECLARE_NONSTD(const char *) ap_set_listener(cmd_parms *cmd, void *dummy,
-     return alloc_listener(cmd->server->process, host, port, proto, NULL);
+@@ -1044,6 +1061,14 @@ AP_DECLARE_NONSTD(const char *) ap_set_listener(cmd_parms *cmd, void *dummy,
+                           scope_id, NULL, cmd->temp_pool);
  }
  
 +AP_DECLARE_NONSTD(const char *) ap_set_freelistener(cmd_parms *cmd, void *dummy,

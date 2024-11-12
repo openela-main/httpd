@@ -1,8 +1,8 @@
 diff --git a/configure.in b/configure.in
-index 1e342bb..a3c994b 100644
+index 3932407..00e2369 100644
 --- a/configure.in
 +++ b/configure.in
-@@ -530,6 +530,11 @@ getloadavg
+@@ -531,6 +531,11 @@ gettid
  dnl confirm that a void pointer is large enough to store a long integer
  APACHE_CHECK_VOID_PTR_LEN
  
@@ -11,11 +11,11 @@ index 1e342bb..a3c994b 100644
 +   APR_ADDTO(HTTPD_LIBS, [-lselinux])
 +])
 +
- AC_CACHE_CHECK([for gettid()], ac_cv_gettid,
- [AC_TRY_RUN(#define _GNU_SOURCE
- #include <unistd.h>
+ if test $ac_cv_func_gettid = no; then
+   # On Linux before glibc 2.30, gettid() is only usable via syscall()
+   AC_CACHE_CHECK([for gettid() via syscall], ap_cv_gettid,
 diff --git a/server/core.c b/server/core.c
-index ca33d94..41e9bdc 100644
+index 8970a50..ff1024d 100644
 --- a/server/core.c
 +++ b/server/core.c
 @@ -65,6 +65,10 @@
@@ -29,7 +29,7 @@ index ca33d94..41e9bdc 100644
  /* LimitRequestBody handling */
  #define AP_LIMIT_REQ_BODY_UNSET         ((apr_off_t) -1)
  #define AP_DEFAULT_LIMIT_REQ_BODY       ((apr_off_t) 1<<30) /* 1GB */
-@@ -5157,6 +5161,28 @@ static int core_post_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *pte
+@@ -5170,6 +5174,28 @@ static int core_post_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *pte
      }
  #endif
  

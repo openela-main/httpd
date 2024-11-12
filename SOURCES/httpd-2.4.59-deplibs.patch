@@ -1,8 +1,8 @@
 diff --git a/configure.in b/configure.in
-index f8f9442..f276550 100644
+index 7194de5..00e2369 100644
 --- a/configure.in
 +++ b/configure.in
-@@ -786,9 +786,9 @@ APACHE_SUBST(INSTALL_SUEXEC)
+@@ -843,9 +843,9 @@ APACHE_SUBST(INSTALL_SUEXEC)
  
  dnl APR should go after the other libs, so the right symbols can be picked up
  if test x${apu_found} != xobsolete; then

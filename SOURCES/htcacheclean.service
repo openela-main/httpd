@@ -7,5 +7,10 @@ Documentation=man:htcacheclean.service(8)
 Type=forking
 User=apache
 PIDFile=/run/httpd/htcacheclean/pid
+Environment=LANG=C
 EnvironmentFile=/etc/sysconfig/htcacheclean
 ExecStart=/usr/sbin/htcacheclean -P /run/httpd/htcacheclean/pid -d $INTERVAL -p $CACHE_ROOT -l $LIMIT $OPTIONS
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

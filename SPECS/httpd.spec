@@ -12,8 +12,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.57
-Release: 11%{?dist}.1
+Version: 2.4.62
+Release: 1%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -62,10 +62,11 @@ Source45: config.layout
 Source46: apachectl.sh
 Source47: apachectl.xml
 Source48: apache-poweredby.png
+Source49: httpd.sysusers
 
 # build/scripts patches
 Patch2: httpd-2.4.43-apxs.patch
-Patch3: httpd-2.4.43-deplibs.patch
+Patch3: httpd-2.4.59-deplibs.patch
 # Needed for socket activation and mod_systemd patch
 Patch19: httpd-2.4.53-detect-systemd.patch
 # Features/functional changes
@@ -74,77 +75,34 @@ Patch22: httpd-2.4.43-mod_systemd.patch
 Patch23: httpd-2.4.48-export.patch
 Patch24: httpd-2.4.43-corelimit.patch
 Patch25: httpd-2.4.57-selinux.patch
-Patch26: httpd-2.4.57-gettid.patch
-Patch27: httpd-2.4.53-icons.patch
-Patch30: httpd-2.4.43-cachehardmax.patch
-Patch34: httpd-2.4.43-socket-activation.patch
-Patch38: httpd-2.4.43-sslciphdefault.patch
-Patch39: httpd-2.4.43-sslprotdefault.patch
-Patch41: httpd-2.4.43-r1861793+.patch
-Patch42: httpd-2.4.48-r1828172+.patch
-Patch45: httpd-2.4.43-logjournal.patch
-Patch46: httpd-2.4.48-proxy-ws-idle-timeout.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1949969
-Patch47: httpd-2.4.57-pr37355.patch
+Patch26: httpd-2.4.53-icons.patch
+Patch27: httpd-2.4.43-cachehardmax.patch
+Patch28: httpd-2.4.62-socket-activation.patch
+Patch29: httpd-2.4.43-sslciphdefault.patch
+Patch30: httpd-2.4.43-sslprotdefault.patch
+Patch31: httpd-2.4.43-logjournal.patch
+Patch32: httpd-2.4.48-proxy-ws-idle-timeout.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1949606
-Patch48: httpd-2.4.46-freebind.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1950021
-Patch49: httpd-2.4.48-ssl-proxy-chains.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2004143
-Patch50: httpd-2.4.57-r1825120.patch
+Patch33: httpd-2.4.62-freebind.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2065677
-Patch52: httpd-2.4.53-separate-systemd-fns.patch
+Patch34: httpd-2.4.53-separate-systemd-fns.patch
 # https://issues.redhat.com/browse/RHEL-5071
-Patch53: httpd-2.4.57-r1912477+.patch
-# https://issues.redhat.com/browse/RHEL-6600
-Patch54: httpd-2.4.57-r1912081.patch
+Patch35: httpd-2.4.57-r1912477+.patch
 
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
-Patch60: httpd-2.4.43-enable-sslv3.patch
-Patch61: httpd-2.4.46-htcacheclean-dont-break.patch
+Patch100: httpd-2.4.43-enable-sslv3.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1932442
-Patch64: httpd-2.4.48-full-release.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1950011
-Patch65: httpd-2.4.51-r1877397.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1938740
-Patch66: httpd-2.4.51-r1892413+.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2073459
-Patch67: httpd-2.4.51-r1811831.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2098056
-Patch68: httpd-2.4.53-r1878890.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2186645
-Patch69: httpd-2.4.57-covscan.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2222001
-Patch70: httpd-2.4.57-mod_status-duplicate-key.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2217726
-Patch71: httpd-2.4.57-davenoent.patch
-# https://issues.redhat.com/browse/RHEL-17686
-Patch72: httpd-2.4.57-r1884505+.patch
+Patch101: httpd-2.4.48-full-release.patch
 # https://bz.apache.org/bugzilla/show_bug.cgi?id=69197
-Patch73: httpd-2.4.57-r1919325.patch
+Patch102: httpd-2.4.62-r1919325.patch
 
 # Security fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=...
 #
-# https://bugzilla.redhat.com/show_bug.cgi?id=2245332
-Patch200: httpd-2.4.57-CVE-2023-31122.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295016
-Patch201: httpd-2.4.57-CVE-2024-38477.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295022
-Patch202: httpd-2.4.57-CVE-2024-39573.patch
-# CVE-2024-38474 and CVE-2024-38475 fixed in one patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295013
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295014
-Patch204: httpd-2.4.57-CVE-2024-38474+.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295012
-Patch206: httpd-2.4.57-CVE-2024-38473.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295015
-Patch207: httpd-2.4.57-CVE-2024-38476.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=2297362
-# https://bugzilla.redhat.com/show_bug.cgi?id=2295761
-# part of CVE-2024-38476 fix
-Patch208: httpd-2.4.57-CVE-2024-39884+.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=
+# Patch200: httpd-2.4.X-CVE-XXXX-YYYYY.patch
+
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -152,13 +110,12 @@ BuildRequires: perl-interpreter, perl-generators, systemd-devel
 BuildRequires: zlib-devel, libselinux-devel, lua-devel, brotli-devel
 BuildRequires: apr-devel >= 1.5.0, apr-util-devel >= 1.5.0, pcre-devel >= 5.0
 BuildRequires: gnupg2
+BuildRequires: systemd-rpm-macros
 Requires: system-logos-httpd
 Provides: webserver
 Requires: httpd-core = 0:%{version}-%{release}
 Recommends: mod_http2, mod_lua
-Requires(preun): systemd-units
-Requires(postun): systemd-units
-Requires(post): systemd-units
+%{?systemd_requires}
 
 %description
 The Apache HTTP Server is a powerful, efficient, and extensible
@@ -208,7 +165,7 @@ also be found at https://httpd.apache.org/docs/2.4/.
 %package filesystem
 Summary: The basic directory layout for the Apache HTTP Server
 BuildArch: noarch
-Requires(pre): /usr/sbin/useradd
+%{?sysusers_requires_compat}
 
 %description filesystem
 The httpd-filesystem package contains the basic directory layout
@@ -287,45 +244,20 @@ written in the Lua programming language.
 %patch23 -p1 -b .export
 %patch24 -p1 -b .corelimit
 %patch25 -p1 -b .selinux
-%patch26 -p1 -b .gettid
-%patch27 -p1 -b .icons
-%patch30 -p1 -b .cachehardmax
-%patch34 -p1 -b .socketactivation
-%patch38 -p1 -b .sslciphdefault
-%patch39 -p1 -b .sslprotdefault
-%patch41 -p1 -b .r1861793+
-%patch42 -p1 -b .r1828172+
-%patch45 -p1 -b .logjournal
-%patch46 -p1 -b .proxy-ws-idle-timeout
-%patch47 -p1 -b .pr37355
-%patch48 -p1 -b .freebind
-%patch49 -p1 -b .ssl-proxy-chains
-%patch50 -p1 -b .r1825120
-%patch52 -p1 -b .separatesystemd
-%patch53 -p1 -b .r1912477+
-%patch54 -p1 -b .r1912081
+%patch26 -p1 -b .icons
+%patch27 -p1 -b .cachehardmax
+%patch28 -p1 -b .socketactivation
+%patch29 -p1 -b .sslciphdefault
+%patch30 -p1 -b .sslprotdefault
+%patch31 -p1 -b .logjournal
+%patch32 -p1 -b .proxy-ws-idle-timeout
+%patch33 -p1 -b .freebind
+%patch34 -p1 -b .separatesystemd
+%patch35 -p1 -b .r1912477+
 
-%patch60 -p1 -b .enable-sslv3
-%patch61 -p1 -b .htcacheclean-dont-break
-%patch64 -p1 -b .full-release
-%patch65 -p1 -b .r1877397
-%patch66 -p1 -b .r1892413+
-%patch67 -p1 -b .r1811831
-%patch68 -p1 -b .r1878890
-%patch69 -p1 -b .covstan
-%patch70 -p1 -b .duplicate-key
-%patch71 -p1 -b .davenoent
-%patch72 -p1 -b .r1884505+
-
-%patch200 -p1 -b .CVE-2023-31122
-%patch201 -p1 -b .CVE-2024-38477
-%patch202 -p1 -b .CVE-2024-39573
-%patch204 -p1 -b .CVE-2024-38474+
-# CVE-2024-38474 regression fix
-%patch73 -p1 -b .r1919325
-%patch206 -p1 -b .CVE-2024-38473
-%patch207 -p1 -b .CVE-2024-38476
-%patch208 -p1 -b .CVE-2024-39884+
+%patch100 -p1 -b .enable-sslv3
+%patch101 -p1 -b .full-release
+%patch102 -p1 -b .r1919325
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -651,6 +583,9 @@ touch -r $RPM_BUILD_ROOT%{_bindir}/apxs \
       $RPM_BUILD_ROOT%{_libdir}/httpd/build/vendor-apxs
 chmod 755 $RPM_BUILD_ROOT%{_libdir}/httpd/build/vendor-apxs
 
+# Fix content dir in sysusers file and install it
+install -p -D -m 0644 %{SOURCE49} %{buildroot}%{_sysusersdir}/httpd.conf
+
 # Remove unpackaged files
 rm -vf \
       $RPM_BUILD_ROOT%{_libdir}/*.exp \
@@ -666,11 +601,8 @@ rm -vf \
 rm -rf $RPM_BUILD_ROOT/etc/httpd/conf/{original,extra}
 
 %pre filesystem
-getent group apache >/dev/null || groupadd -g 48 -r apache
-getent passwd apache >/dev/null || \
-  useradd -r -u 48 -g apache -s /sbin/nologin \
-    -d %{contentdir} -c "Apache" apache
-exit 0
+%sysusers_create_compat %{SOURCE49}
+
 
 %post
 %systemd_post httpd.service htcacheclean.service httpd.socket
@@ -834,6 +766,7 @@ exit $rv
 %dir %{contentdir}/icons
 %attr(755,root,root) %dir %{_unitdir}/httpd.service.d
 %attr(755,root,root) %dir %{_unitdir}/httpd.socket.d
+%{_sysusersdir}/httpd.conf
 
 %files tools
 %{_bindir}/*
@@ -886,23 +819,37 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Mon Aug 05 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-11.1
-- Resolves: RHEL-46047 - httpd: Security issues via backend applications whose
-  response headers are malicious or exploitable (CVE-2024-38476)
-- Resolves: RHEL-53021 - Regression introduced by CVE-2024-38474 fix
+* Sat Aug 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1
+- new version 2.4.62
+- Resolves: RHEL-52724 - Regression introduced by CVE-2024-38474 fix
 
-* Thu Jul 04 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-11
-- Resolves: RHEL-45792 -  httpd: Encoding problem in
-  mod_proxy (CVE-2024-38473)
+* Fri Jul 19 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.59-7
+- Resolves: RHEL-49856: htcacheclean.service missing [Install] section
 
-* Wed Jul 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.57-9
-- Resolves: RHEL-45766 -  httpd: null pointer dereference in
-  mod_proxy (CVE-2024-38477)
-- Resolves: RHEL-45749 - httpd: Potential SSRF in mod_rewrite (CVE-2024-39573)
-- Resolves: RHEL-45818 - httpd: Substitution encoding issue in
-  mod_rewrite (CVE-2024-38474)
-- Resolves: RHEL-45771 - httpd: Improper escaping of output in
-  mod_rewrite (CVE-2024-38475)
+* Thu May 30 2024 Joe Orton <jorton@redhat.com> - 2.4.59-6
+- mod_ssl: restore SSL_OP_NO_RENEGOTIATE support
+  Related: RHEL-14668
+
+* Tue May 21 2024 Joe Orton <jorton@redhat.com> - 2.4.59-5
+- mod_ssl: defer ENGINE_finish() calls to a cleanup
+  Resolves: RHEL-36755
+
+* Mon May 20 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.59-4
+- Resolves: RHEL-6575 - [RFE] httpd use systemd-sysusers
+
+* Wed May 08 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.59-3
+- Related: RHEL-14668 - RFE: httpd rebase to 2.4.59
+
+* Wed May  8 2024 Joe Orton <jorton@redhat.com> - 2.4.59-2
+- Resolves: RHEL-35870 - httpd mod_cgi/cgid unification
+
+* Fri May 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.59-1
+- new version 2.4.59
+- Resolves: RHEL-14668 - RFE: httpd rebase to 2.4.59
+- Resolves: RHEL-31856 - httpd: HTTP response splitting
+  (CVE-2023-38709)
+- Resolves: RHEL-31859 - httpd: HTTP Response Splitting in multiple
+  modules (CVE-2024-24795)
 
 * Wed Feb  7 2024 Joe Orton <jorton@redhat.com> - 2.4.57-8
 - mod_xml2enc: fix media type handling
