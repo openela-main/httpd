@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 1%{?dist}
+Release: 1%{?dist}.2
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -96,6 +96,10 @@ Patch100: httpd-2.4.43-enable-sslv3.patch
 Patch101: httpd-2.4.48-full-release.patch
 # https://bz.apache.org/bugzilla/show_bug.cgi?id=69197
 Patch102: httpd-2.4.62-r1919325.patch
+# https://issues.redhat.com/browse/RHEL-36755
+Patch103: httpd-2.4.62-engine-fallback.patch
+# https://issues.redhat.com/browse/RHEL-68660
+Patch104: httpd-2.4.62-r1921299.patch
 
 # Security fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=...
@@ -258,6 +262,8 @@ written in the Lua programming language.
 %patch100 -p1 -b .enable-sslv3
 %patch101 -p1 -b .full-release
 %patch102 -p1 -b .r1919325
+%patch103 -p0 -b .engine-fallback
+%patch104 -p1 -b .r1921299
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -819,6 +825,14 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Fri Jan 10 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1.2
+- Resolves: RHEL-73580 - RewriteRule proxying to UDS (unix domain socket)
+  configured in .htaccess doesn't work on httpd-2.4.62-1
+
+* Thu Nov 28 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1.1
+- mod_ssl: fix loading keys via ENGINE API
+  Resolves: RHEL-69456
+
 * Sat Aug 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1
 - new version 2.4.62
 - Resolves: RHEL-52724 - Regression introduced by CVE-2024-38474 fix
