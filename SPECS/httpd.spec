@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.2
+Release: 65%{?dist}.3
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -173,6 +173,8 @@ Patch93: httpd-2.4.37-r1885607.patch
 Patch94: httpd-2.4.57-r1884505+.patch
 # https://bz.apache.org/bugzilla/show_bug.cgi?id=69197
 Patch95: httpd-2.4.37-r1919325.patch
+# https://issues.redhat.com/browse/RHEL-56068
+Patch96: httpd-2.4.37-r1922080.patch
 
 # Security fixes
 Patch200: httpd-2.4.37-r1851471.patch
@@ -513,6 +515,8 @@ interface for storing and accessing per-user session data.
 %patch95 -p1 -b .r1919325
 %patch246 -p1 -b .CVE-2024-38476
 %patch247 -p1 -b .CVE-2024-39884+
+
+%patch96 -p1 -b .r1922080
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -1018,6 +1022,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Wed Jan 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.3
+- Resolves: RHEL-56068 - Apache HTTPD no longer parse PHP files with
+  unicode characters in the name
+
 * Tue Aug 06 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.2
 - Resolves: RHEL-46040 - httpd:2.4/httpd: Security issues via backend
   applications whose response headers are malicious or exploitable (CVE-2024-38476)

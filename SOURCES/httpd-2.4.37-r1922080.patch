@@ -1,0 +1,64 @@
+diff --git a/modules/proxy/mod_proxy.c b/modules/proxy/mod_proxy.c
+index 94ec87e..16ebd98 100644
+--- a/modules/proxy/mod_proxy.c
++++ b/modules/proxy/mod_proxy.c
+@@ -1043,6 +1043,7 @@ static int proxy_handler(request_rec *r)
+ 
+         r->proxyreq = PROXYREQ_REVERSE;
+         r->filename = apr_pstrcat(r->pool, r->handler, r->filename, NULL);
++        apr_table_setn(r->notes, "proxy-sethandler", "1");
+ 
+         /* Still need to fixup/canonicalize r->filename */
+         rc = ap_proxy_fixup_uds_filename(r);
+@@ -1055,6 +1056,7 @@ static int proxy_handler(request_rec *r)
+         }
+     }
+     else if (r->proxyreq && strncmp(r->filename, "proxy:", 6) == 0) {
++        apr_table_unset(r->notes, "proxy-sethandler");
+         rc = OK;
+     }
+     if (rc != OK) {
+diff --git a/modules/proxy/mod_proxy_fcgi.c b/modules/proxy/mod_proxy_fcgi.c
+index f9cf716..fa0b810 100644
+--- a/modules/proxy/mod_proxy_fcgi.c
++++ b/modules/proxy/mod_proxy_fcgi.c
+@@ -63,6 +63,8 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
+     apr_port_t port, def_port;
+     fcgi_req_config_t *rconf = NULL;
+     const char *pathinfo_type = NULL;
++    fcgi_dirconf_t *dconf = ap_get_module_config(r->per_dir_config,
++                                                 &proxy_fcgi_module);
+ 
+     if (ap_cstr_casecmpn(url, "fcgi:", 5) == 0) {
+         url += 5;
+@@ -92,7 +94,29 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
+         host = apr_pstrcat(r->pool, "[", host, "]", NULL);
+     }
+ 
+-    if (apr_table_get(r->notes, "proxy-nocanon")) {
++    if (apr_table_get(r->notes, "proxy-sethandler")
++        || apr_table_get(r->notes, "proxy-nocanon")){
++
++        char *c = url;
++
++        /* We do not call ap_proxy_canonenc_ex() on the path here, don't
++         * let control characters pass still, and for php-fpm no '?' either.
++         */
++        if (FCGI_MAY_BE_FPM(dconf)) {
++            while (!apr_iscntrl(*c) && *c != '?')
++                c++;
++        }
++        else {
++            while (!apr_iscntrl(*c))
++                c++;
++        }
++        if (*c) {
++            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(10414)
++                          "To be forwarded path contains control characters%s (%s)",
++                          FCGI_MAY_BE_FPM(dconf) ? " or '?'" : "", url);
++            return HTTP_FORBIDDEN;
++        }
++
+         path = url;   /* this is the raw path */
+     }
+     else {
