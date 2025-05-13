@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 1%{?dist}.2
+Release: 4%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -100,6 +100,8 @@ Patch102: httpd-2.4.62-r1919325.patch
 Patch103: httpd-2.4.62-engine-fallback.patch
 # https://issues.redhat.com/browse/RHEL-68660
 Patch104: httpd-2.4.62-r1921299.patch
+# https://issues.redhat.com/browse/RHEL-66488
+Patch105: httpd-2.4.62-r1922080.patch
 
 # Security fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=...
@@ -264,6 +266,7 @@ written in the Lua programming language.
 %patch102 -p1 -b .r1919325
 %patch103 -p0 -b .engine-fallback
 %patch104 -p1 -b .r1921299
+%patch105 -p1 -b .r1922080
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -825,13 +828,17 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Fri Jan 10 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1.2
-- Resolves: RHEL-73580 - RewriteRule proxying to UDS (unix domain socket)
+* Wed Jan 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4
+- Resolves: RHEL-66488 - Apache HTTPD no longer parse PHP files with unicode
+  characters in the name
+
+* Thu Jan 09 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-3
+- Resolves: RHEL-68660 - RewriteRule proxying to UDS (unix domain socket)
   configured in .htaccess doesn't work on httpd-2.4.62-1
 
-* Thu Nov 28 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1.1
+* Thu Sep 12 2024 Joe Orton <jorton@redhat.com> - 2.4.62-2
 - mod_ssl: fix loading keys via ENGINE API
-  Resolves: RHEL-69456
+  Resolves: RHEL-36755
 
 * Sat Aug 03 2024 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-1
 - new version 2.4.62

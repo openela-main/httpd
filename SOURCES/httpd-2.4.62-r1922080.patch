@@ -1,0 +1,136 @@
+From 2aa446f5b08a10c37e952daf96d0c80d3460873a Mon Sep 17 00:00:00 2001
+From: Eric Covener <covener@apache.org>
+Date: Mon, 25 Nov 2024 13:32:44 +0000
+Subject: [PATCH] Merge r1919620, r1919621, r1919623, r1919628, r1921237 from
+ trunk:
+
+mod_proxy_fcgi: Don't re-encode SCRIPT_FILENAME. PR 69203
+
+Before r1918550 (r1918559 in 2.4.60), "SetHandler proxy:..." configurations
+did not pass through proxy_fixup() hence the proxy_canon_handler hooks, leaving
+fcgi's SCRIPT_FILENAME environment variable (from r->filename) decoded, or more
+exactly not re-encoded.
+
+We still want to call ap_proxy_canon_url() for "fcgi:" to handle/strip the UDS
+"unix:" case and check that r->filename is valid and contains no controls, but
+proxy_fcgi_canon() will not ap_proxy_canonenc_ex() thus re-encode anymore.
+
+Note that this will do the same for "ProxyPass fcgi:...", there is no reason
+that using SetHandler or ProxyPass don't result in the same thing. If an opt
+in/out makes sense we should probably look at ProxyFCGIBackendType.
+
+
+
+Follow up to r1919620: CHANGES entry indent.
+
+Follow up to r1919620: init path after "proxy:" is skipped.
+
+Follow up to r1919620: Restore r->filename re-encoding for ProxyPass URLs.
+
+
+
+mod_proxy_fgci: Follow up to r1919628: Simplify.
+
+Variable from_handler is used once so axe it.
+
+
+
+Submitted by: ylavic
+Reviewed by:   ylavic, covener, jorton
+
+Github: closes #470
+
+
+git-svn-id: https://svn.apache.org/repos/asf/httpd/httpd/branches/2.4.x@1922080 13f79535-47bb-0310-9956-ffa450edef68
+---
+ CHANGES                        |  3 +++
+ changes-entries/bz69203.txt    |  2 ++
+ modules/proxy/mod_proxy.c      |  2 ++
+ modules/proxy/mod_proxy_fcgi.c | 37 +++++++++++++++++++++++-----------
+ 4 files changed, 32 insertions(+), 12 deletions(-)
+ create mode 100644 changes-entries/bz69203.txt
+
+diff --git a/modules/proxy/mod_proxy.c b/modules/proxy/mod_proxy.c
+index ab29c321df8..4047d58f2aa 100644
+--- a/modules/proxy/mod_proxy.c
++++ b/modules/proxy/mod_proxy.c
+@@ -1240,6 +1240,7 @@ static int proxy_handler(request_rec *r)
+ 
+         r->proxyreq = PROXYREQ_REVERSE;
+         r->filename = apr_pstrcat(r->pool, r->handler, r->filename, NULL);
++        apr_table_setn(r->notes, "proxy-sethandler", "1");
+ 
+         /* Still need to canonicalize r->filename */
+         rc = ap_proxy_canon_url(r);
+@@ -1249,6 +1250,7 @@ static int proxy_handler(request_rec *r)
+         }
+     }
+     else if (r->proxyreq && strncmp(r->filename, "proxy:", 6) == 0) {
++        apr_table_unset(r->notes, "proxy-sethandler");
+         rc = OK;
+     }
+     if (rc != OK) {
+diff --git a/modules/proxy/mod_proxy_fcgi.c b/modules/proxy/mod_proxy_fcgi.c
+index d420df6a77a..50f443e50d9 100644
+--- a/modules/proxy/mod_proxy_fcgi.c
++++ b/modules/proxy/mod_proxy_fcgi.c
+@@ -63,6 +63,8 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
+     apr_port_t port, def_port;
+     fcgi_req_config_t *rconf = NULL;
+     const char *pathinfo_type = NULL;
++    fcgi_dirconf_t *dconf = ap_get_module_config(r->per_dir_config,
++                                                 &proxy_fcgi_module);
+ 
+     if (ap_cstr_casecmpn(url, "fcgi:", 5) == 0) {
+         url += 5;
+@@ -92,9 +94,30 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
+         host = apr_pstrcat(r->pool, "[", host, "]", NULL);
+     }
+ 
+-    if (apr_table_get(r->notes, "proxy-nocanon")
++    if (apr_table_get(r->notes, "proxy-sethandler")
++        || apr_table_get(r->notes, "proxy-nocanon")
+         || apr_table_get(r->notes, "proxy-noencode")) {
+-        path = url;   /* this is the raw/encoded path */
++        char *c = url;
++
++        /* We do not call ap_proxy_canonenc_ex() on the path here, don't
++         * let control characters pass still, and for php-fpm no '?' either.
++         */
++        if (FCGI_MAY_BE_FPM(dconf)) {
++            while (!apr_iscntrl(*c) && *c != '?')
++                c++;
++        }
++        else {
++            while (!apr_iscntrl(*c))
++                c++;
++        }
++        if (*c) {
++            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(10414)
++                          "To be forwarded path contains control characters%s (%s)",
++                          FCGI_MAY_BE_FPM(dconf) ? " or '?'" : "", url);
++            return HTTP_FORBIDDEN;
++        }
++
++        path = url;  /* this is the raw path */
+     }
+     else {
+         core_dir_config *d = ap_get_core_module_config(r->per_dir_config);
+@@ -106,16 +129,6 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
+             return HTTP_BAD_REQUEST;
+         }
+     }
+-    /*
+-     * If we have a raw control character or a ' ' in nocanon path,
+-     * correct encoding was missed.
+-     */
+-    if (path == url && *ap_scan_vchar_obstext(path)) {
+-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(10414)
+-                      "To be forwarded path contains control "
+-                      "characters or spaces");
+-        return HTTP_FORBIDDEN;
+-    }
+ 
+     r->filename = apr_pstrcat(r->pool, "proxy:fcgi://", host, sport, "/",
+                               path, NULL);
+
