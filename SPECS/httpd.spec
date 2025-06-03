@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.3
+Release: 65%{?dist}.4
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -175,6 +175,8 @@ Patch94: httpd-2.4.57-r1884505+.patch
 Patch95: httpd-2.4.37-r1919325.patch
 # https://issues.redhat.com/browse/RHEL-56068
 Patch96: httpd-2.4.37-r1922080.patch
+# https://issues.redhat.com/browse/RHEL-87641
+Patch97: httpd-2.4.37-r1855391.patch
 
 # Security fixes
 Patch200: httpd-2.4.37-r1851471.patch
@@ -463,6 +465,7 @@ interface for storing and accessing per-user session data.
 %patch92 -p1 -b .mod_status-dupl
 %patch93 -p1 -b .r1885607
 %patch94 -p1 -b .r1884505+
+%patch97 -p1 -b .r1855391
 
 %patch200 -p1 -b .r1851471
 %patch201 -p1 -b .CVE-2019-0211
@@ -1022,6 +1025,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue Apr 22 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.4
+- Resolves: RHEL-87641 - apache Bug 63192 - mod_ratelimit breaks HEAD requests
+
 * Wed Jan 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.3
 - Resolves: RHEL-56068 - Apache HTTPD no longer parse PHP files with
   unicode characters in the name
