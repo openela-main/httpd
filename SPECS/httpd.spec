@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 4%{?dist}
+Release: 4%{?dist}.4
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -102,13 +102,17 @@ Patch103: httpd-2.4.62-engine-fallback.patch
 Patch104: httpd-2.4.62-r1921299.patch
 # https://issues.redhat.com/browse/RHEL-66488
 Patch105: httpd-2.4.62-r1922080.patch
+# https://issues.redhat.com/browse/RHEL-99815
+Patch106: httpd-2.4.62-r1926107.patch
 
 # Security fixes
-# https://bugzilla.redhat.com/show_bug.cgi?id=...
 #
-# https://bugzilla.redhat.com/show_bug.cgi?id=
-# Patch200: httpd-2.4.X-CVE-XXXX-YYYYY.patch
-
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374576
+Patch200: httpd-2.4.62-CVE-2025-23048.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374571
+Patch201: httpd-2.4.62-CVE-2024-47252.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374580
+Patch202: httpd-2.4.62-CVE-2025-49812.patch
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -267,6 +271,11 @@ written in the Lua programming language.
 %patch103 -p0 -b .engine-fallback
 %patch104 -p1 -b .r1921299
 %patch105 -p1 -b .r1922080
+%patch106 -p1 -b .r1926107
+
+%patch200 -p1 -b .CVE-2025-23048
+%patch201 -p1 -b .CVE-2024-47252
+%patch202 -p1 -b .CVE-2025-49812
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -828,6 +837,17 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue Jul 15 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4.4
+- Resolves: RHEL-99949 - CVE-2025-49812 httpd: HTTP Session Hijack via a TLS upgrade
+
+* Mon Jul 14 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4.1
+- Resolves: RHEL-99972 - CVE-2024-47252 httpd: insufficient escaping of
+  user-supplied data in mod_ssl
+- Resolves: RHEL-99963 - CVE-2025-23048 httpd: access control bypass by trusted
+  clients is possible using TLS 1.3 session resumption
+- Resolves: RHEL-102079 - stickysession field does not work when specifying it
+  in the query parameter after upgrade to 9.5
+
 * Wed Jan 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4
 - Resolves: RHEL-66488 - Apache HTTPD no longer parse PHP files with unicode
   characters in the name
