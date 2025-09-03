@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.4
+Release: 65%{?dist}.5
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -281,6 +281,12 @@ Patch246: httpd-2.4.37-CVE-2024-38476.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2297362
 # https://bugzilla.redhat.com/show_bug.cgi?id=2295761
 Patch247: httpd-2.4.37-CVE-2024-39884+.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374576
+Patch248: httpd-2.4.37-CVE-2025-23048.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374571
+Patch249: httpd-2.4.37-CVE-2024-47252.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374580
+Patch250: httpd-2.4.37-CVE-2025-49812.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -518,6 +524,9 @@ interface for storing and accessing per-user session data.
 %patch95 -p1 -b .r1919325
 %patch246 -p1 -b .CVE-2024-38476
 %patch247 -p1 -b .CVE-2024-39884+
+%patch248 -p1 -b .CVE-2025-23048
+%patch249 -p1 -b .CVE-2024-47252
+%patch250 -p1 -b .CVE-2025-49812
 
 %patch96 -p1 -b .r1922080
 
@@ -1025,6 +1034,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Mon Jul 28 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.5
+- Resolves: RHEL-99944 - CVE-2025-49812 httpd: HTTP Session Hijack via a TLS upgrade
+- Resolves: RHEL-99969 - CVE-2024-47252 httpd: insufficient escaping of
+  user-supplied data in mod_ssl
+- Resolves: RHEL-99961 - CVE-2025-23048 httpd: access control bypass by trusted
+  clients is possible using TLS 1.3 session resumption
+
 * Tue Apr 22 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.4
 - Resolves: RHEL-87641 - apache Bug 63192 - mod_ratelimit breaks HEAD requests
 
