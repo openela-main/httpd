@@ -1,0 +1,64 @@
+
+Upstream-Status: in trunk not in 2.4.x
+
+diff --git a/configure.in b/configure.in
+index 74015ca..8c0ee10 100644
+--- httpd-2.4.54/modules/arch/unix/config5.m4.selinux
++++ httpd-2.4.54/modules/arch/unix/config5.m4
+@@ -23,6 +23,11 @@
+     AC_MSG_WARN([Your system does not support systemd.])
+     enable_systemd="no"
+   else
++    AC_CHECK_LIB(selinux, is_selinux_enabled, [
++      AC_DEFINE(HAVE_SELINUX, 1, [Defined if SELinux is supported])
++      APR_ADDTO(MOD_SYSTEMD_LDADD, [-lselinux])
++    ])
++  
+     APR_ADDTO(MOD_SYSTEMD_LDADD, [$SYSTEMD_LIBS])
+   fi
+ ])
+--- httpd-2.4.54/modules/arch/unix/mod_systemd.c.selinux
++++ httpd-2.4.54/modules/arch/unix/mod_systemd.c
+@@ -35,6 +35,10 @@
+ #include <unistd.h>
+ #endif
+ 
++#ifdef HAVE_SELINUX
++#include <selinux/selinux.h>
++#endif
++
+ APR_DECLARE_OPTIONAL_FN(int,
+                         ap_find_systemd_socket, (process_rec *, apr_port_t));
+ 
+@@ -70,6 +74,20 @@
+     return apr_psprintf(p, "%s port %u", addr, sa->port);
+ }
+ 
++#ifdef HAVE_SELINUX
++static void log_selinux_context(void)
++{
++    char *con;
++
++    if (is_selinux_enabled() && getcon(&con) == 0) {
++        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL,
++                     "SELinux policy enabled; "
++                     "httpd running as context %s", con);
++        freecon(con);
++    }
++}
++#endif
++
+ /* Report the service is ready in post_config, which could be during
+  * startup or after a reload.  The server could still hit a fatal
+  * startup error after this point during ap_run_mpm(), so this is
+@@ -87,6 +105,10 @@
+     if (ap_state_query(AP_SQ_MAIN_STATE) == AP_SQ_MS_CREATE_PRE_CONFIG)
+         return OK;
+ 
++#ifdef HAVE_SELINUX
++    log_selinux_context();
++#endif
++    
+     for (lr = ap_listeners; lr; lr = lr->next) {
+         char *s = dump_listener(lr, ptemp);
+ 

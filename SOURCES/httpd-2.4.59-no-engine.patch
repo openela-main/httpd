@@ -1,0 +1,11 @@
+--- httpd-2.4.59/modules/ssl/ssl_private.h.no-engine
++++ httpd-2.4.59/modules/ssl/ssl_private.h
+@@ -112,7 +112,7 @@
+         || (defined(OPENSSL_API_LEVEL) && OPENSSL_API_LEVEL < 30000)) \
+     && !defined(OPENSSL_NO_ENGINE)
+ #include <openssl/engine.h>
+-#define MODSSL_HAVE_ENGINE_API 1
++#define MODSSL_HAVE_ENGINE_API 0
+ #endif
+ #ifndef MODSSL_HAVE_ENGINE_API
+ #define MODSSL_HAVE_ENGINE_API 0
