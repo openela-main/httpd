@@ -1,0 +1,54 @@
+# ./pullrev.sh 1926064
+http://svn.apache.org/viewvc?view=revision&revision=1926064
+
+--- httpd-2.4.63/include/ap_mmn.h
++++ httpd-2.4.63/include/ap_mmn.h
+@@ -608,6 +608,7 @@
+  * 20120211.136 (2.4.63-dev) Add wait_io field to struct process_score
+  * 20120211.137 (2.4.63-dev) Add AP_MPMQ_CAN_WAITIO
+  * 20120211.138 (2.4.63-dev) Add is_host_matchable to proxy_worker_shared
++ * 20120211.139 (2.4.63-dev) Add dav_get_base_path() to mod_dav
+  */
+ 
+ #define MODULE_MAGIC_COOKIE 0x41503234UL /* "AP24" */
+@@ -615,7 +616,7 @@
+ #ifndef MODULE_MAGIC_NUMBER_MAJOR
+ #define MODULE_MAGIC_NUMBER_MAJOR 20120211
+ #endif
+-#define MODULE_MAGIC_NUMBER_MINOR 138                 /* 0...n */
++#define MODULE_MAGIC_NUMBER_MINOR 139                 /* 0...n */
+ 
+ /**
+  * Determine if the server's current MODULE_MAGIC_NUMBER is at least a
+only in patch2:
+--- httpd-2.4.63/modules/dav/main/mod_dav.c
++++ httpd-2.4.63/modules/dav/main/mod_dav.c
+@@ -250,6 +250,13 @@
+     return dav_get_provider(r)->search;
+ }
+ 
++DAV_DECLARE(const char *) dav_get_base_path(request_rec *r)
++{
++    dav_dir_conf *conf = ap_get_module_config(r->per_dir_config, &dav_module);
++
++    return conf && conf->base ? conf->base : NULL;
++}
++
+ /*
+  * Command handler for the DAV directive, which is TAKE1.
+  */
+only in patch2:
+--- httpd-2.4.63/modules/dav/main/mod_dav.h
++++ httpd-2.4.63/modules/dav/main/mod_dav.h
+@@ -430,6 +430,11 @@
+ DAV_DECLARE(dav_error *) dav_get_resource(request_rec *r, int label_allowed,
+                                           int use_checked_in, dav_resource **res_p);
+ 
++/*
++** If DavBasePath is configured for the request location, return the
++** configured path, otherwise NULL.
++*/
++DAV_DECLARE(const char *) dav_get_base_path(request_rec *r);
+ 
+ /* --------------------------------------------------------------------
+ **

@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 1%{?dist}.2
+Release: 4%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -99,6 +99,9 @@ Patch32: httpd-2.4.54-selinux.patch
 Patch33: httpd-2.4.62-freebind.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1947496
 Patch34: httpd-2.4.62-proxy-ws-idle-timeout.patch
+Patch35: httpd-2.4.63-r1926064.patch
+# https://issues.redhat.com/browse/RHEL-106043
+Patch36: httpd-2.4.63-r1926317.patch
 
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
@@ -836,14 +839,23 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Tue Jul 15 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-1.2
-- Resolves: RHEL-99944 - CVE-2025-49812 httpd: HTTP Session Hijack via a TLS upgrade
-- Resolves: RHEL-99969 - CVE-2024-47252 httpd: insufficient escaping of
-  user-supplied data in mod_ssl
-- Resolves: RHEL-99961 - CVE-2025-23048 httpd: access control bypass by trusted
-  clients is possible using TLS 1.3 session resumption
-- Resolves: RHEL-103623 - stickysession field does not work when specifying it
-  in the query parameter after upgrade to 9.5
+* Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4
+- Resolves: RHEL-99945 - httpd: HTTP Session Hijack via a TLS
+  upgrade (CVE-2025-49812)
+- Resolves: RHEL-99962 - httpd: access control bypass by trusted clients
+  is possible using TLS 1.3 session resumption (CVE-2025-23048)
+- Resolves: RHEL-99970 - httpd: insufficient escaping of user-supplied
+  data in mod_ssl (CVE-2024-47252)
+- Resolves: RHEL-103489 - stickysession field does not work when
+  specifying it in the query parameter after upgrade to 9.5
+
+* Mon Jul 28 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-3
+- Resolves: RHEL-106043 - httpd 2.4.62: mod_proxy_connect prematurely closes
+  connections
+
+* Thu Jul 24 2025 Joe Orton  <jorton@redhat.com> - 2.4.63-2
+- mod_dav: add dav_get_base_path() API
+  Resolves: RHEL-105255
 
 * Mon Jan 27 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-1
 - new version 2.4.63
