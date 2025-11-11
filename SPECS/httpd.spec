@@ -13,7 +13,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 4%{?dist}.4
+Release: 7%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -88,6 +88,10 @@ Patch33: httpd-2.4.62-freebind.patch
 Patch34: httpd-2.4.53-separate-systemd-fns.patch
 # https://issues.redhat.com/browse/RHEL-5071
 Patch35: httpd-2.4.57-r1912477+.patch
+# https://issues.redhat.com/browse/RHEL-41069
+Patch36: httpd-2.4.62-r1926064.patch
+# https://issues.redhat.com/browse/RHEL-106043
+Patch37: httpd-2.4.62-r1926317.patch
 
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
@@ -113,6 +117,7 @@ Patch200: httpd-2.4.62-CVE-2025-23048.patch
 Patch201: httpd-2.4.62-CVE-2024-47252.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
 Patch202: httpd-2.4.62-CVE-2025-49812.patch
+
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -264,6 +269,8 @@ written in the Lua programming language.
 %patch33 -p1 -b .freebind
 %patch34 -p1 -b .separatesystemd
 %patch35 -p1 -b .r1912477+
+%patch36 -p1 -b .r1926064
+%patch37 -p1 -b .r1926317
 
 %patch100 -p1 -b .enable-sslv3
 %patch101 -p1 -b .full-release
@@ -837,16 +844,23 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Tue Jul 15 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4.4
-- Resolves: RHEL-99949 - CVE-2025-49812 httpd: HTTP Session Hijack via a TLS upgrade
+* Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7
+- Resolves: RHEL-99815 - stickysession field does not work when specifying
+  it in the query parameter after upgrade to 9.5
+- Resolves: RHEL-99953 - httpd: HTTP Session Hijack via a TLS
+  upgrade (CVE-2025-49812)
+- Resolves: RHEL-99968 - httpd: access control bypass by trusted
+  clients is possible using TLS 1.3 session resumption (CVE-2025-23048)
+- Resolves: RHEL-99977 - httpd: insufficient escaping of user-supplied
+  data in mod_ssl (CVE-2024-47252)
 
-* Mon Jul 14 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4.1
-- Resolves: RHEL-99972 - CVE-2024-47252 httpd: insufficient escaping of
-  user-supplied data in mod_ssl
-- Resolves: RHEL-99963 - CVE-2025-23048 httpd: access control bypass by trusted
-  clients is possible using TLS 1.3 session resumption
-- Resolves: RHEL-102079 - stickysession field does not work when specifying it
-  in the query parameter after upgrade to 9.5
+* Tue Jul 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-6
+- Resolves: RHEL-94562 - httpd 2.4.62: mod_proxy_connect prematurely closes
+  connections
+
+* Fri Jun 06 2025 Joe Orton  <jorton@redhat.com> - 2.4.62-5
+- mod_dav: add dav_get_base_path() API
+- Resolves: RHEL-41069
 
 * Wed Jan 29 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-4
 - Resolves: RHEL-66488 - Apache HTTPD no longer parse PHP files with unicode

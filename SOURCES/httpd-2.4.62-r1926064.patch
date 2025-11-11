@@ -1,0 +1,44 @@
+# ./pullrev.sh 1926064
+http://svn.apache.org/viewvc?view=revision&revision=1926064
+
+Since we can't jump from the 2.4.62-level MMN to the 2.4.64-level
+MMN added in the upstream 2.4.x backport without adding all other APIs,
+this patch defines a custom macro:
+
+ #define AP_X_RH_DAV_GET_BASE_PATH 1
+
+which can be tested in the mod_dav_svn code which consumes this.
+
+--- httpd-2.4.62/modules/dav/main/mod_dav.c
++++ httpd-2.4.62/modules/dav/main/mod_dav.c
+@@ -250,6 +250,13 @@
+     return dav_get_provider(r)->search;
+ }
+ 
++DAV_DECLARE(const char *) dav_get_base_path(request_rec *r)
++{
++    dav_dir_conf *conf = ap_get_module_config(r->per_dir_config, &dav_module);
++
++    return conf && conf->base ? conf->base : NULL;
++}
++
+ /*
+  * Command handler for the DAV directive, which is TAKE1.
+  */
+--- httpd-2.4.62/modules/dav/main/mod_dav.h
++++ httpd-2.4.62/modules/dav/main/mod_dav.h
+@@ -430,6 +430,14 @@
+ DAV_DECLARE(dav_error *) dav_get_resource(request_rec *r, int label_allowed,
+                                           int use_checked_in, dav_resource **res_p);
+ 
++/* Defined for backported dav_get_base_path(). */
++#define AP_X_RH_DAV_GET_BASE_PATH 1
++
++/*
++** If DavBasePath is configured for the request location, return the
++** configured path, otherwise NULL.
++*/
++DAV_DECLARE(const char *) dav_get_base_path(request_rec *r);
+ 
+ /* --------------------------------------------------------------------
+ **
