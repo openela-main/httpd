@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 4%{?dist}
+Release: 4%{?dist}.2
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -118,6 +118,10 @@ Patch200: httpd-2.4.63-CVE-2025-23048.patch
 Patch201: httpd-2.4.63-CVE-2024-47252.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
 Patch202: httpd-2.4.63-CVE-2025-49812.patch
+# CVE-2025-23048 follow-up
+# https://github.com/apache/httpd/pull/561
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=69743
+Patch203: httpd-2.4.63-sslvhostsnipolicy.patch
 
 # Apache-2.0: everything
 # BSD-3-Clause: util_pcre.c, ap_regex.h
@@ -839,6 +843,10 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Nov 06 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4.2
+- Resolves: RHEL-125894 - mod_ssl: allow more fine grained SSL SNI vhost check
+  to avoid unnecessary 421 errors after CVE-2025-23048 fix
+
 * Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4
 - Resolves: RHEL-99945 - httpd: HTTP Session Hijack via a TLS
   upgrade (CVE-2025-49812)
