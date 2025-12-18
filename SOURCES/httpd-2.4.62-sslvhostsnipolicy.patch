@@ -1,0 +1,554 @@
+From f063cc14f9aae9c19de45dfa3c48828a75249e05 Mon Sep 17 00:00:00 2001
+From: Joe Orton <jorton@apache.org>
+Date: Tue, 11 Nov 2025 10:23:22 +0100
+Subject: [PATCH] mod_ssl: Add SSLVHostSNIPolicy directive to set the
+ compatibility level required for VirtualHost matching.
+
+For "secure" and "authonly" modes, a hash of the policy-relevant vhost
+configuration is created and stored in the post_config hooks, reducing
+the runtime code complexity (and overhead).
+
+* modules/ssl/ssl_engine_kernel.c (ssl_check_vhost_sni_policy): New
+  function, replacing ssl_server_compatible et al.
+
+* modules/ssl/ssl_engine_config.c (ssl_cmd_SSLVHostSNIPolicy): New
+  function.
+
+* modules/ssl/ssl_engine_init.c (md5_strarray_cmp, md5_strarray_hash,
+  hash_sni_policy_pk, hash_sni_policy_auth, create_sni_policy_hash):
+  New functions.
+  (ssl_init_Module): Invoke create_sni_policy_hash to store the hash
+  for every SSLSrvConfigRec.
+
+* modules/ssl/ssl_private.h (SSLModConfigRec): Add snivh_policy field.
+  (SSLSrvConfigRec): Add sni_policy_hash field.
+
+PR: 69743
+GitHub: closes #561
+---
+ docs/manual/mod/mod_ssl.html.en |  77 ++++++++++++++++++
+ modules/ssl/mod_ssl.c           |   2 +
+ modules/ssl/ssl_engine_config.c |  41 ++++++++++
+ modules/ssl/ssl_engine_init.c   | 107 +++++++++++++++++++++++++
+ modules/ssl/ssl_engine_kernel.c | 133 ++++++--------------------------
+ modules/ssl/ssl_private.h       |  17 ++++
+ 6 files changed, 267 insertions(+), 110 deletions(-)
+
+diff --git a/docs/manual/mod/mod_ssl.html.en b/docs/manual/mod/mod_ssl.html.en
+index 3fc8a48..6a929ea 100644
+--- a/docs/manual/mod/mod_ssl.html.en
++++ b/docs/manual/mod/mod_ssl.html.en
+@@ -125,6 +125,7 @@ to provide the cryptography engine.</p>
+ <li><img alt="" src="../images/down.gif" /> <a href="#sslusestapling">SSLUseStapling</a></li>
+ <li><img alt="" src="../images/down.gif" /> <a href="#sslverifyclient">SSLVerifyClient</a></li>
+ <li><img alt="" src="../images/down.gif" /> <a href="#sslverifydepth">SSLVerifyDepth</a></li>
++<li><img alt="" src="../images/down.gif" /> <a href="#sslvhostsnipolicy">SSLVHostSNIPolicy</a></li>
+ </ul>
+ <h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_ssl">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_ssl">Report a bug</a></li></ul><h3>See also</h3>
+ <ul class="seealso">
+@@ -2863,6 +2864,82 @@ known to the server (i.e. the CA's certificate is under
+ <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">SSLVerifyDepth 10</pre>
+ </div>
+ 
++</div>
++<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
++<div class="directive-section"><h2><a name="SSLVHostSNIPolicy" id="SSLVHostSNIPolicy">SSLVHostSNIPolicy</a> <a name="sslvhostsnipolicy" id="sslvhostsnipolicy">Directive</a> <a title="Permanent link" href="#sslvhostsnipolicy" class="permalink">&para;</a></h2>
++<table class="directive">
++<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Set compatibility policy for SNI client access to virtual hosts.</td></tr>
++<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>SSLVHostSNIPolicy strict|secure|authonly|insecure</code></td></tr>
++<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>SSLVHostSNIPolicy secure</code></td></tr>
++<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
++<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
++<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ssl</td></tr>
++<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache HTTP Server 2.4.62 in Red Hat Enterprise Linux 9</td></tr>
++</table><p>This directive sets the policy applied when checking whether the
++<code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code>
++identified by the <code>Host</code> request header in an HTTP request
++is compatible with the <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> identified from the SNI
++extension sent during the initial TLS connection handshake. If an HTTP
++request is associated with a virtual host which has an incompatible
++SSL/TLS configuration under the policy used, an HTTP error response
++with status code 421 ("Misdirected Request") will be sent.</p>
++
++<p>The policy also applies to TLS connections where an SNI extension
++is not sent during the handshake, implicitly using the default or
++first virtual host definition. If the Host header in an HTTP request
++on such a connection identifies any other non-default virtual host,
++the compatibility policy is tested.</p>
++
++<p>The <code>strict</code> policy blocks all HTTP requests which are
++identified with a different virtual host to that identifed by SNI.
++The <code>insecure</code> policy allows all HTTP requests regardless
++of virtual host identified; such a configuration may be vulnerable to
++<a href="https://httpd.apache.org/security/vulnerabilities_24.html">CVE-2025-23048</a>.
++</p>
++
++<p>The (default) <code>secure</code>, and <code>authonly</code>
++policies compare specific aspects of the SSL configuration for the two
++virtual hosts, which are grouped into two categories:
++
++<ul>
++  <li><strong>server certificate/key, or protocol/cipher
++  restrictions</strong>: directives which determine the server
++  certificate or key (<code class="directive"><a href="#sslcertificatekeyfile">SSLCertificateKeyFile</a></code> etc), cipher or
++  protocol restrictions (<code class="directive"><a href="#sslciphersuite">SSLCipherSuite</a></code> and <code class="directive"><a href="#sslprotocol">SSLProtocol</a></code>)</li>
++
++  <li><strong>client vertification and authentication
++  settings</strong>: directives which affect TLS client certificate
++  verification or authentication, such as <code class="directive"><a href="#sslverifyclient">SSLVerifyClient</a></code>, <code class="directive"><a href="#sslverifymode">SSLVerifyMode</a></code>, <code class="directive"><a href="#sslcacertificatepath">SSLCACertificatePath</a></code>, <code class="directive"><a href="#sslsrpverifierfile">SSLSRPVerifierFile</a></code>; any use of <code class="directive"><a href="#sslopensslconfcmd">SSLOpenSSLConfCmd</a></code></li>
++</ul>
++
++This table illustrates whether an HTTP request will be blocked or
++allowed when the virtual host configurations differ as described,
++under each different policy setting:
++
++<table class="bordered"><tr class="header">
++  <th>Policy mode</th>
++  <th>Any VirtualHost mismatch</th>
++  <th>Server certificate/key, <br />or protocol/cipher restrictions</th>
++  <th>Client verification/<br />authentication settings</th>
++</tr>
++<tr>
++  <td><code>strict</code><td>blocked</td><td>blocked</td><td>blocked</td></td>
++</tr>
++<tr class="odd">
++  <td><code>secure</code><td>allowed</td><td>blocked</td><td>blocked</td></td>
++</tr>
++<tr>
++  <td><code>authonly</code><td>allowed</td><td>blocked</td><td>allowed</td></td>
++</tr>
++<tr class="odd">
++  <td><code>insecure</code><td>allowed</td><td>allowed</td><td>allowed</td></td>
++</tr>
++</table>
++</p>
++<div class="example"><h3>Example</h3><pre class="prettyprint lang-config">SSLVHostSNIPolicy authonly</pre>
++</div>
++
++
+ </div>
+ </div>
+ <div class="bottomlang">
+diff --git a/modules/ssl/mod_ssl.c b/modules/ssl/mod_ssl.c
+index fb66d18..c0fdafd 100644
+--- a/modules/ssl/mod_ssl.c
++++ b/modules/ssl/mod_ssl.c
+@@ -80,6 +80,8 @@ static const command_rec ssl_config_cmds[] = {
+     SSL_CMD_SRV(RandomSeed, TAKE23,
+                 "SSL Pseudo Random Number Generator (PRNG) seeding source "
+                 "('startup|connect builtin|file:/path|exec:/path [bytes]')")
++    SSL_CMD_SRV(VHostSNIPolicy, TAKE1,
++                "SSL VirtualHost SNI compatibility policy setting")
+ 
+     /*
+      * Per-server context configuration directives
+diff --git a/modules/ssl/ssl_engine_config.c b/modules/ssl/ssl_engine_config.c
+index c5dce7f..f856b18 100644
+--- a/modules/ssl/ssl_engine_config.c
++++ b/modules/ssl/ssl_engine_config.c
+@@ -82,6 +82,9 @@ SSLModConfigRec *ssl_config_global_create(server_rec *s)
+ #ifdef HAVE_FIPS
+     mc->fips = UNSET;
+ #endif
++#ifdef HAVE_TLSEXT
++    mc->snivh_policy           = MODSSL_SNIVH_SECURE;
++#endif
+ 
+     apr_pool_userdata_set(mc, SSL_MOD_CONFIG_KEY,
+                           apr_pool_cleanup_null,
+@@ -1918,6 +1921,44 @@ const char  *ssl_cmd_SSLStrictSNIVHostCheck(cmd_parms *cmd, void *dcfg, int flag
+ #endif
+ }
+ 
++const char *ssl_cmd_SSLVHostSNIPolicy(cmd_parms *cmd, void *dcfg, const char *arg)
++{
++#ifdef HAVE_TLSEXT
++    SSLModConfigRec *mc = myModConfig(cmd->server);
++    const char *err;
++
++    if ((err = ap_check_cmd_context(cmd, GLOBAL_ONLY))) {
++        return err;
++    }
++    if (!mc) {
++        return "SSLVHostSNIPolicy cannot be used inside SSLPolicyDefine";
++    }
++
++    if (strcEQ(arg, "secure")) {
++        mc->snivh_policy = MODSSL_SNIVH_SECURE;
++    }
++    else if (strcEQ(arg, "strict")) {
++        mc->snivh_policy = MODSSL_SNIVH_STRICT;
++    }
++    else if (strcEQ(arg, "insecure")) {
++        mc->snivh_policy = MODSSL_SNIVH_INSECURE;
++    }
++    else if (strcEQ(arg, "authonly")) {
++        mc->snivh_policy = MODSSL_SNIVH_AUTHONLY;
++    }
++    else {
++        return apr_psprintf(cmd->pool, "Invalid SSLVhostSNIPolicy "
++                            "argument '%s'", arg);
++    }
++
++    return NULL;
++#else
++    return "SSLVHostSNIPolicy cannot be used, OpenSSL is not built with "
++        "support for TLS extensions and SNI indication. Refer to the "
++        "documentation, and build a compatible version of OpenSSL."
++#endif
++}
++
+ #ifdef HAVE_OCSP_STAPLING
+ 
+ const char *ssl_cmd_SSLStaplingCache(cmd_parms *cmd,
+diff --git a/modules/ssl/ssl_engine_init.c b/modules/ssl/ssl_engine_init.c
+index 309a7a4..6208564 100644
+--- a/modules/ssl/ssl_engine_init.c
++++ b/modules/ssl/ssl_engine_init.c
+@@ -30,6 +30,7 @@
+ 
+ #include "mpm_common.h"
+ #include "mod_md.h"
++#include "util_md5.h"
+ 
+ static apr_status_t ssl_init_ca_cert_path(server_rec *, apr_pool_t *, const char *,
+                                           STACK_OF(X509_NAME) *, STACK_OF(X509_INFO) *);
+@@ -186,6 +187,110 @@ static void ssl_add_version_components(apr_pool_t *ptemp, apr_pool_t *pconf,
+                  modver, AP_SERVER_BASEVERSION, incver);
+ }
+ 
++#ifdef HAVE_TLSEXT
++/* Helper functions to create the SNI vhost policy hash. The policy
++ * hash captures the configuration elements relevant to the mode
++ * selected at runtime by SSLVHostSNIPolicy. */
++
++#define md5_str_update(ctx_, pfx_, str_) do { apr_md5_update(ctx_, pfx_, strlen(pfx_)); apr_md5_update(ctx_, str_, strlen(str_)); } while (0)
++#define md5_ifstr_update(ctx_, pfx_, str_) do { apr_md5_update(ctx_, pfx_, strlen(pfx_)); if (str_) apr_md5_update(ctx_, str_, strlen(str_)); } while (0)
++#define md5_fmt_update(ctx_, fmt_, i_) do { char s_[128]; apr_snprintf(s_, sizeof s_, fmt_, i_); \
++        apr_md5_update(ctx_, s_, strlen(s_)); } while (0)
++
++static int md5_strarray_cmp(const void *p1, const void *p2)
++{
++    return strcmp(*(char **)p1, *(char **)p2);
++}
++
++/* Hashes an array of strings in sorted order. */
++static void md5_strarray_hash(apr_pool_t *ptemp, apr_md5_ctx_t *hash,
++                              const char *pfx, apr_array_header_t *s)
++{
++    char **elts = apr_pmemdup(ptemp, s->elts, s->nelts * sizeof *elts);
++    int i;
++
++    qsort(elts, s->nelts, sizeof(char *), md5_strarray_cmp);
++
++    apr_md5_update(hash, pfx, strlen(pfx));
++    for (i = 0; i < s->nelts; i++) {
++        md5_str_update(hash, "elm:", elts[i]);
++    }
++}
++
++static void hash_sni_policy_pk(apr_pool_t *ptemp, apr_md5_ctx_t *hash, modssl_ctx_t *ctx)
++{
++    md5_fmt_update(hash, "protocol:%d", ctx->protocol);
++
++    md5_ifstr_update(hash, "ciphers:", ctx->auth.cipher_suite);
++    md5_ifstr_update(hash, "tls13_ciphers:", ctx->auth.tls13_ciphers);
++
++    md5_strarray_hash(ptemp, hash, "cert_files:", ctx->pks->cert_files);
++    md5_strarray_hash(ptemp, hash, "key_files:", ctx->pks->key_files);
++}
++
++static void hash_sni_policy_auth(apr_md5_ctx_t *hash, modssl_ctx_t *ctx)
++{
++    modssl_pk_server_t *pks = ctx->pks;
++    modssl_auth_ctx_t *a = &ctx->auth;
++
++    md5_fmt_update(hash, "verify_depth:%d", a->verify_depth);
++    md5_fmt_update(hash, "verify_mode:%d", a->verify_mode);
++
++    md5_ifstr_update(hash, "ca_name_path:", pks->ca_name_path);
++    md5_ifstr_update(hash, "ca_name_file:", pks->ca_name_file);
++    md5_ifstr_update(hash, "ca_cert_path:", a->ca_cert_path);
++    md5_ifstr_update(hash, "ca_cert_file:", a->ca_cert_file);
++    md5_ifstr_update(hash, "crl_path:", ctx->crl_path);
++    md5_ifstr_update(hash, "crl_file:", ctx->crl_file);
++    md5_fmt_update(hash, "crl_check_mask:%d", ctx->crl_check_mask);
++    md5_fmt_update(hash, "ocsp_mask:%d", ctx->ocsp_mask);
++    md5_fmt_update(hash, "ocsp_force_default:%d", ctx->ocsp_force_default);
++    md5_ifstr_update(hash, "ocsp_responder:", ctx->ocsp_responder);
++
++#ifdef HAVE_SRP
++    md5_ifstr_update(hash, "srp_vfile:", ctx->srp_vfile);
++#endif
++
++#ifdef HAVE_SSL_CONF_CMD
++    {
++        apr_array_header_t *parms = ctx->ssl_ctx_param;
++        int n;
++
++        for (n = 0; n < parms->nelts; n++) {
++            ssl_ctx_param_t *p = &APR_ARRAY_IDX(parms, n, ssl_ctx_param_t);
++
++            md5_str_update(hash, "param:", p->name);
++            md5_str_update(hash, "value:", p->value);
++        }
++    }
++#endif
++}
++#endif
++
++static char *create_sni_policy_hash(apr_pool_t *p, apr_pool_t *ptemp,
++                                    modssl_snivhpolicy_t policy,
++                                    SSLSrvConfigRec *sc)
++{
++    char *rv = NULL;
++#ifdef HAVE_TLSEXT
++    if (policy != MODSSL_SNIVH_STRICT && policy != MODSSL_SNIVH_INSECURE) {
++        apr_md5_ctx_t hash;
++        unsigned char digest[APR_MD5_DIGESTSIZE];
++
++        /* Create the vhost policy hash for comparison later. */
++        apr_md5_init(&hash);
++        hash_sni_policy_auth(&hash, sc->server);
++        if (policy == MODSSL_SNIVH_SECURE)
++            hash_sni_policy_pk(ptemp, &hash, sc->server);
++        apr_md5_final(digest, &hash);
++
++        rv = apr_palloc(p, 2 * APR_MD5_DIGESTSIZE + 1);
++        ap_bin2hex(digest, APR_MD5_DIGESTSIZE, rv); /* sets final '\0' */
++    }
++#endif
++    return rv;
++}
++
+ /*  _________________________________________________________________
+ **
+ **  Let other answer special connection attempts. 
+@@ -439,6 +544,8 @@ apr_status_t ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
+                 return rv;
+             }
+         }
++
++        sc->sni_policy_hash = create_sni_policy_hash(p, ptemp, mc->snivh_policy, sc);
+     }
+ 
+     /*
+diff --git a/modules/ssl/ssl_engine_kernel.c b/modules/ssl/ssl_engine_kernel.c
+index 33aa1f7..83ae90e 100644
+--- a/modules/ssl/ssl_engine_kernel.c
++++ b/modules/ssl/ssl_engine_kernel.c
+@@ -101,112 +101,28 @@ static int fill_reneg_buffer(request_rec *r, SSLDirConfigRec *dc)
+ }
+ 
+ #ifdef HAVE_TLSEXT
+-static int ap_array_same_str_set(apr_array_header_t *s1, apr_array_header_t *s2)
++/* Check whether a transition from vhost sc1 to sc2 from SNI to Host:
++ * vhost selection is permitted according to the SSLVHostSNIPolicy
++ * setting.  Returns 1 if the policy treats the vhosts as compatible,
++ * else 0. */
++static int ssl_check_vhost_sni_policy(SSLSrvConfigRec *sc1,
++                                      SSLSrvConfigRec *sc2)
+ {
+-    int i;
+-    const char *c;
+-    
+-    if (s1 == s2) {
++    modssl_snivhpolicy_t policy = sc1->mc->snivh_policy;
++
++    /* Policy: insecure => allow everything. */
++    if (policy == MODSSL_SNIVH_INSECURE)
+         return 1;
+-    }
+-    else if (!s1 || !s2 || (s1->nelts != s2->nelts)) {
+-        return 0;
+-    }
+     
+-    for (i = 0; i < s1->nelts; i++) {
+-        c = APR_ARRAY_IDX(s1, i, const char *);
+-        if (!c || !ap_array_str_contains(s2, c)) {
+-            return 0;
+-        }
+-    }
+-    return 1;
+-}
++    /* Policy: strict => fail for any vhost transition. */
++    if (policy == MODSSL_SNIVH_STRICT)
++        return sc1 == sc2;
+ 
+-static int ssl_pk_server_compatible(modssl_pk_server_t *pks1, 
+-                                    modssl_pk_server_t *pks2) 
+-{
+-    if (!pks1 || !pks2) {
+-        return 0;
+-    }
+-    /* both have the same certificates? */
+-    if ((pks1->ca_name_path != pks2->ca_name_path)
+-        && (!pks1->ca_name_path || !pks2->ca_name_path 
+-            || strcmp(pks1->ca_name_path, pks2->ca_name_path))) {
+-        return 0;
+-    }
+-    if ((pks1->ca_name_file != pks2->ca_name_file)
+-        && (!pks1->ca_name_file || !pks2->ca_name_file 
+-            || strcmp(pks1->ca_name_file, pks2->ca_name_file))) {
+-        return 0;
+-    }
+-    if (!ap_array_same_str_set(pks1->cert_files, pks2->cert_files)
+-        || !ap_array_same_str_set(pks1->key_files, pks2->key_files)) {
+-        return 0;
+-    }
+-    return 1;
+-}
++    /* For authonly/secure policy, compare the hash. */
++    AP_DEBUG_ASSERT(sc1->sni_policy_hash);
++    AP_DEBUG_ASSERT(sc2->sni_policy_hash);
+ 
+-static int ssl_auth_compatible(modssl_auth_ctx_t *a1, 
+-                               modssl_auth_ctx_t *a2) 
+-{
+-    if (!a1 || !a2) {
+-        return 0;
+-    }
+-    /* both have the same verification */
+-    if ((a1->verify_depth != a2->verify_depth)
+-        || (a1->verify_mode != a2->verify_mode)) {
+-        return 0;
+-    }
+-    /* both have the same ca path/file */
+-    if ((a1->ca_cert_path != a2->ca_cert_path)
+-        && (!a1->ca_cert_path || !a2->ca_cert_path 
+-            || strcmp(a1->ca_cert_path, a2->ca_cert_path))) {
+-        return 0;
+-    }
+-    if ((a1->ca_cert_file != a2->ca_cert_file)
+-        && (!a1->ca_cert_file || !a2->ca_cert_file 
+-            || strcmp(a1->ca_cert_file, a2->ca_cert_file))) {
+-        return 0;
+-    }
+-    /* both have the same ca cipher suite string */
+-    if ((a1->cipher_suite != a2->cipher_suite)
+-        && (!a1->cipher_suite || !a2->cipher_suite 
+-            || strcmp(a1->cipher_suite, a2->cipher_suite))) {
+-        return 0;
+-    }
+-    /* both have the same ca cipher suite string */
+-    if ((a1->tls13_ciphers != a2->tls13_ciphers)
+-        && (!a1->tls13_ciphers || !a2->tls13_ciphers 
+-            || strcmp(a1->tls13_ciphers, a2->tls13_ciphers))) {
+-        return 0;
+-    }
+-    return 1;
+-}
+-
+-static int ssl_ctx_compatible(modssl_ctx_t *ctx1, 
+-                              modssl_ctx_t *ctx2) 
+-{
+-    if (!ctx1 || !ctx2 
+-        || (ctx1->protocol != ctx2->protocol)
+-        || !ssl_auth_compatible(&ctx1->auth, &ctx2->auth)
+-        || !ssl_pk_server_compatible(ctx1->pks, ctx2->pks)) {
+-        return 0;
+-    }
+-    return 1;
+-}
+-
+-static int ssl_server_compatible(server_rec *s1, server_rec *s2)
+-{
+-    SSLSrvConfigRec *sc1 = s1? mySrvConfig(s1) : NULL;
+-    SSLSrvConfigRec *sc2 = s2? mySrvConfig(s2) : NULL;
+-
+-    /* both use the same TLS protocol? */
+-    if (!sc1 || !sc2 
+-        || !ssl_ctx_compatible(sc1->server, sc2->server)) {
+-        return 0;
+-    }
+-    
+-    return 1;
++    return strcmp(sc1->sni_policy_hash, sc2->sni_policy_hash) == 0;
+ }
+ #endif
+ 
+@@ -275,6 +191,8 @@ int ssl_hook_ReadReq(request_rec *r)
+         server_rec *handshakeserver = sslconn->server;
+         SSLSrvConfigRec *hssc = mySrvConfig(handshakeserver);
+ 
++        AP_DEBUG_ASSERT(hssc);
++
+         if ((servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name))) {
+             /*
+              * The SNI extension supplied a hostname. So don't accept requests
+@@ -315,19 +233,14 @@ int ssl_hook_ReadReq(request_rec *r)
+                            "which is required to access this server.<br />\n");
+             return HTTP_FORBIDDEN;
+         }
+-        if (r->server != handshakeserver
+-            && !ssl_server_compatible(sslconn->server, r->server)) {
+-            /*
+-             * The request does not select the virtual host that was
+-             * selected for handshaking and its SSL parameters are different
+-             */
+-
++        /* Enforce SSL SNI vhost compatibility policy. */
++        if (!ssl_check_vhost_sni_policy(sc, hssc)) {
+             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02032)
+                          "Hostname %s %s and hostname %s provided"
+-                         " via HTTP have no compatible SSL setup",
++                         " via HTTP have no compatible SSL setup for policy '%s'",
+                          servername ? servername : handshakeserver->server_hostname,
+                          servername ? "provided via SNI" : "(default host as no SNI was provided)",
+-                         r->hostname);
++                          r->hostname, MODSSL_SNIVH_NAME(sc->mc->snivh_policy));
+             return HTTP_MISDIRECTED_REQUEST;
+         }
+     }
+diff --git a/modules/ssl/ssl_private.h b/modules/ssl/ssl_private.h
+index aaa75aa..cfa847a 100644
+--- a/modules/ssl/ssl_private.h
++++ b/modules/ssl/ssl_private.h
+@@ -548,6 +548,19 @@ typedef struct {
+     int          nBytes;
+ } ssl_randseed_t;
+ 
++/* SNI vhost compatibility policy. */
++typedef enum {
++    MODSSL_SNIVH_STRICT   = 0,
++    MODSSL_SNIVH_SECURE   = 1,
++    MODSSL_SNIVH_AUTHONLY = 2,
++    MODSSL_SNIVH_INSECURE = 3
++} modssl_snivhpolicy_t;
++
++/* Maps modssl_snivhpolicy_t back into a config option string. */
++#define MODSSL_SNIVH_NAME(p_) ((p_) == MODSSL_SNIVH_STRICT ? "strict" : \
++                               ((p_) == MODSSL_SNIVH_SECURE ? "secure" : \
++                                ((p_) == MODSSL_SNIVH_AUTHONLY ? "authonly" : "insecure" )))
++
+ /**
+  * Define the structure of an ASN.1 anything
+  */
+@@ -681,6 +694,8 @@ typedef struct {
+ #ifdef HAVE_FIPS
+     BOOL             fips;
+ #endif
++
++    modssl_snivhpolicy_t snivh_policy;
+ } SSLModConfigRec;
+ 
+ /** Structure representing configured filenames for certs and keys for
+@@ -835,6 +850,7 @@ struct SSLSrvConfigRec {
+     modssl_ctx_t    *server;
+ #ifdef HAVE_TLSEXT
+     ssl_enabled_t    strict_sni_vhost_check;
++    const char      *sni_policy_hash;
+ #endif
+ #ifndef OPENSSL_NO_COMP
+     BOOL             compression;
+@@ -910,6 +926,7 @@ const char  *ssl_cmd_SSLRequire(cmd_parms *, void *, const char *);
+ const char  *ssl_cmd_SSLUserName(cmd_parms *, void *, const char *);
+ const char  *ssl_cmd_SSLRenegBufferSize(cmd_parms *cmd, void *dcfg, const char *arg);
+ const char  *ssl_cmd_SSLStrictSNIVHostCheck(cmd_parms *cmd, void *dcfg, int flag);
++const char  *ssl_cmd_SSLVHostSNIPolicy(cmd_parms *cmd, void *dcfg, const char *arg);
+ const char *ssl_cmd_SSLInsecureRenegotiation(cmd_parms *cmd, void *dcfg, int flag);
+ 
+ const char  *ssl_cmd_SSLProxyEngine(cmd_parms *cmd, void *dcfg, int flag);
+-- 
+2.44.0
+

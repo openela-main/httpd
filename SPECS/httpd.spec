@@ -4,6 +4,7 @@
 %define mmn 20120211
 %define mmnisa %{mmn}%{__isa_name}%{__isa_bits}
 %define vstring %(source /etc/os-release; echo ${NAME})
+%define vprefix %(source /etc/os-release; echo ${ID})
 %if 0%{?fedora} > 26 || 0%{?rhel} > 7
 %global mpm event
 %else
@@ -13,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 7%{?dist}
+Release: 7%{?dist}.2
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -53,6 +54,7 @@ Source32: httpd.service.xml
 Source33: htcacheclean.service.xml
 Source34: httpd.conf.xml
 Source35: 00-brotli.conf
+Source36: snipolicy.conf
 Source40: htcacheclean.service
 Source41: htcacheclean.sysconf
 Source42: httpd-init.service
@@ -108,6 +110,8 @@ Patch104: httpd-2.4.62-r1921299.patch
 Patch105: httpd-2.4.62-r1922080.patch
 # https://issues.redhat.com/browse/RHEL-99815
 Patch106: httpd-2.4.62-r1926107.patch
+# https://issues.redhat.com/browse/RHEL-105446
+Patch107: httpd-2.4.62-hcheck-stuck.patch
 
 # Security fixes
 #
@@ -117,6 +121,10 @@ Patch200: httpd-2.4.62-CVE-2025-23048.patch
 Patch201: httpd-2.4.62-CVE-2024-47252.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
 Patch202: httpd-2.4.62-CVE-2025-49812.patch
+# CVE-2025-23048 follow-up
+# https://github.com/apache/httpd/pull/561
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=69743
+Patch203: httpd-2.4.62-sslvhostsnipolicy.patch
 
 
 License: ASL 2.0
@@ -279,10 +287,12 @@ written in the Lua programming language.
 %patch104 -p1 -b .r1921299
 %patch105 -p1 -b .r1922080
 %patch106 -p1 -b .r1926107
+%patch107 -p1 -b .hcheck-stuck
 
 %patch200 -p1 -b .CVE-2025-23048
 %patch201 -p1 -b .CVE-2024-47252
 %patch202 -p1 -b .CVE-2025-49812
+%patch203 -p1 -b .sslvhostsnipolicy
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -331,7 +341,7 @@ xmlto man $RPM_SOURCE_DIR/httpd.service.xml
 xmlto man %{SOURCE47}
 
 : Building with MMN %{mmn}, MMN-ISA %{mmnisa}
-: Default MPM is %{mpm}, vendor string is '%{vstring}'
+: Default MPM is %{mpm}, vendor string is '%{vstring}', prefix is '%{vprefix}'
 
 %build
 # forcibly prevent use of bundled apr, apr-util, pcre
@@ -436,10 +446,12 @@ mkdir $RPM_BUILD_ROOT%{_unitdir}/httpd.socket.d
 install -m 644 -p $RPM_SOURCE_DIR/10-listen443.conf \
       $RPM_BUILD_ROOT%{_unitdir}/httpd.socket.d/10-listen443.conf
 
-for f in welcome.conf ssl.conf manual.conf userdir.conf; do
+for f in welcome.conf ssl.conf manual.conf userdir.conf snipolicy.conf; do
   install -m 644 -p $RPM_SOURCE_DIR/$f \
         $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/$f
 done
+mv $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/snipolicy.conf \
+   $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{vprefix}-snipolicy.conf
 
 # Split-out extra config shipped as default in conf.d:
 for f in autoindex; do
@@ -723,6 +735,7 @@ exit $rv
 
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/*.conf
 %exclude %{_sysconfdir}/httpd/conf.d/ssl.conf
+%exclude %{_sysconfdir}/httpd/conf.d/*snipolicy.conf
 %exclude %{_sysconfdir}/httpd/conf.d/manual.conf
 
 %dir %{_sysconfdir}/httpd/conf.modules.d
@@ -808,6 +821,7 @@ exit $rv
 %{_libdir}/httpd/modules/mod_ssl.so
 %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-ssl.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/ssl.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/*snipolicy.conf
 %attr(0700,apache,root) %dir %{_localstatedir}/cache/httpd/ssl
 %{_unitdir}/httpd-init.service
 %{_libexecdir}/httpd-ssl-pass-dialog
@@ -844,6 +858,15 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Wed Nov 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.2
+- Resolves: RHEL-123850 - mod_proxy_hcheck may stop healthchecks after a child
+  process is reclaimed
+
+* Tue Nov 11 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.1
+- Resolves: RHEL-125884 - mod_ssl: allow more fine grained SSL SNI vhost check
+  to avoid unnecessary 421 errors after CVE-2025-23048 fix
+- mod_ssl: add conf.d/snipolicy.conf to set 'SSLVHostSNIPolicy authonly' default
+
 * Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7
 - Resolves: RHEL-99815 - stickysession field does not work when specifying
   it in the query parameter after upgrade to 9.5
