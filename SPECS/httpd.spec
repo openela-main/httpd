@@ -4,6 +4,7 @@
 %define mmn 20120211
 %define mmnisa %{mmn}%{__isa_name}%{__isa_bits}
 %define vstring %(source /etc/os-release; echo ${NAME})
+%define vprefix %(source /etc/os-release; echo ${ID})
 %if 0%{?fedora} > 26 || 0%{?rhel} > 7
 %global mpm event
 %else
@@ -13,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.5
+Release: 65%{?dist}.6
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -42,6 +43,7 @@ Source25: 01-session.conf
 Source26: 10-listen443.conf
 Source27: httpd.socket
 Source28: 00-optional.conf
+Source29: snipolicy.conf
 # Documentation
 Source30: README.confd
 Source31: README.confmod
@@ -287,6 +289,10 @@ Patch248: httpd-2.4.37-CVE-2025-23048.patch
 Patch249: httpd-2.4.37-CVE-2024-47252.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
 Patch250: httpd-2.4.37-CVE-2025-49812.patch
+# CVE-2025-23048 follow-up
+# https://github.com/apache/httpd/pull/561
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=69743
+Patch251: httpd-2.4.37-sslvhostsnipolicy.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -527,6 +533,7 @@ interface for storing and accessing per-user session data.
 %patch248 -p1 -b .CVE-2025-23048
 %patch249 -p1 -b .CVE-2024-47252
 %patch250 -p1 -b .CVE-2025-49812
+%patch251 -p1 -b .sslvhostsnipolicy
 
 %patch96 -p1 -b .r1922080
 
@@ -573,7 +580,7 @@ xmlto man $RPM_SOURCE_DIR/htcacheclean.service.xml
 xmlto man $RPM_SOURCE_DIR/httpd.service.xml
 
 : Building with MMN %{mmn}, MMN-ISA %{mmnisa}
-: Default MPM is %{mpm}, vendor string is '%{vstring}'
+: Default MPM is %{mpm}, vendor string is '%{vstring}', prefix is '%{vprefix}'
 
 %build
 # forcibly prevent use of bundled apr, apr-util, pcre
@@ -675,10 +682,12 @@ mkdir $RPM_BUILD_ROOT%{_unitdir}/httpd.socket.d
 install -m 644 -p $RPM_SOURCE_DIR/10-listen443.conf \
       $RPM_BUILD_ROOT%{_unitdir}/httpd.socket.d/10-listen443.conf
 
-for f in welcome.conf ssl.conf manual.conf userdir.conf; do
+for f in welcome.conf ssl.conf manual.conf userdir.conf snipolicy.conf; do
   install -m 644 -p $RPM_SOURCE_DIR/$f \
         $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/$f
 done
+mv $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/snipolicy.conf \
+   $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{vprefix}-snipolicy.conf
 
 # Split-out extra config shipped as default in conf.d:
 for f in autoindex; do
@@ -911,6 +920,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/*.conf
 %exclude %{_sysconfdir}/httpd/conf.d/ssl.conf
+%exclude %{_sysconfdir}/httpd/conf.d/*snipolicy.conf
 %exclude %{_sysconfdir}/httpd/conf.d/manual.conf
 
 %dir %{_sysconfdir}/httpd/conf.modules.d
@@ -999,6 +1009,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_ssl.so
 %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-ssl.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/ssl.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/*snipolicy.conf
 %attr(0700,apache,root) %dir %{_localstatedir}/cache/httpd/ssl
 %{_unitdir}/httpd-init.service
 %{_libexecdir}/httpd-ssl-pass-dialog
@@ -1034,6 +1045,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Fri Nov 07 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.6
+- Resolves: RHEL-127073 - mod_ssl: allow more fine grained SSL SNI vhost check
+  to avoid unnecessary 421 errors after CVE-2025-23048 fix
+- mod_ssl: add conf.d/snipolicy.conf to set 'SSLVHostSNIPolicy authonly' default
+
 * Mon Jul 28 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.5
 - Resolves: RHEL-99944 - CVE-2025-49812 httpd: HTTP Session Hijack via a TLS upgrade
 - Resolves: RHEL-99969 - CVE-2024-47252 httpd: insufficient escaping of
