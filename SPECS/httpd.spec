@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 4%{?dist}.2
+Release: 4%{?dist}.3
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -122,6 +122,12 @@ Patch202: httpd-2.4.63-CVE-2025-49812.patch
 # https://github.com/apache/httpd/pull/561
 # https://bz.apache.org/bugzilla/show_bug.cgi?id=69743
 Patch203: httpd-2.4.63-sslvhostsnipolicy.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419262
+Patch204: httpd-2.4.63-CVE-2025-66200.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419139
+Patch205: httpd-2.4.63-CVE-2025-65082.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419365
+Patch206: httpd-2.4.63-CVE-2025-58098.patch
 
 # Apache-2.0: everything
 # BSD-3-Clause: util_pcre.c, ap_regex.h
@@ -843,6 +849,14 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Wed Dec 10 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4.3
+- Resolves: RHEL-135052 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
+  via AllowOverride FileInfo (CVE-2025-66200)
+- Resolves: RHEL-135035 - httpd: Apache HTTP Server: CGI environment variable
+  override (CVE-2025-65082)
+- Resolves: RHEL-134467 - httpd: Apache HTTP Server: Server Side Includes adds
+  query string to #exec cmd=... (CVE-2025-58098)
+
 * Thu Nov 06 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4.2
 - Resolves: RHEL-125894 - mod_ssl: allow more fine grained SSL SNI vhost check
   to avoid unnecessary 421 errors after CVE-2025-23048 fix
