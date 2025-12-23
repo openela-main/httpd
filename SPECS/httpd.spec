@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 7%{?dist}.2
+Release: 7%{?dist}.3
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -125,6 +125,12 @@ Patch202: httpd-2.4.62-CVE-2025-49812.patch
 # https://github.com/apache/httpd/pull/561
 # https://bz.apache.org/bugzilla/show_bug.cgi?id=69743
 Patch203: httpd-2.4.62-sslvhostsnipolicy.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419262
+Patch204: httpd-2.4.62-CVE-2025-66200.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419139
+Patch205: httpd-2.4.62-CVE-2025-65082.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2419365
+Patch206: httpd-2.4.62-CVE-2025-58098.patch
 
 
 License: ASL 2.0
@@ -293,6 +299,9 @@ written in the Lua programming language.
 %patch201 -p1 -b .CVE-2024-47252
 %patch202 -p1 -b .CVE-2025-49812
 %patch203 -p1 -b .sslvhostsnipolicy
+%patch204 -p1 -b .CVE-2025-66200
+%patch205 -p1 -b .CVE-2025-65082
+%patch206 -p1 -b .CVE-2025-58098
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -858,6 +867,14 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Fri Dec 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.3
+- Resolves: RHEL-135063 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
+  via AllowOverride FileInfo (CVE-2025-66200)
+- Resolves: RHEL-135048 - httpd: Apache HTTP Server: CGI environment variable
+  override (CVE-2025-65082)
+- Resolves: RHEL-134480 - httpd: Apache HTTP Server: Server Side Includes adds
+  query string to #exec cmd=... (CVE-2025-58098)
+
 * Wed Nov 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.2
 - Resolves: RHEL-123850 - mod_proxy_hcheck may stop healthchecks after a child
   process is reclaimed
