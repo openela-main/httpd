@@ -1,0 +1,112 @@
+From d56527579e6a56ebfc265f3a059694a58e7e8c71 Mon Sep 17 00:00:00 2001
+From: Joe Orton <jorton@apache.org>
+Date: Wed, 21 Jan 2026 11:05:12 +0000
+Subject: [PATCH] core: Add millisecond support to ErrorLogFormat time
+ specifiers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+%{m} prints the timestamp in millisecond-resolution.
+
+* include/util_time.h:
+  Define new AP_CTIME_OPTION_MSEC option for printing time in milliseconds
+  format.
+
+* server/util_time.c (ap_recent_ctime_ex):
+  Handle AP_CTIME_OPTION_MSEC to print time in a millisecond format.
+
+* server/log.c (log_ctime):
+  Recognize the m time option in both fast-path and composite %{...}t formats.
+
+Submitted by: Luboš Uhliarik <luhliari redhat.com>
+Github: closes #597
+
+
+git-svn-id: https://svn.apache.org/repos/asf/httpd/httpd/trunk@1931452 13f79535-47bb-0310-9956-ffa450edef68
+---
+ include/util_time.h          |  2 ++
+ server/log.c                 |  8 +++++++-
+ server/util_time.c           | 17 +++++++++++++++--
+ 5 files changed, 30 insertions(+), 3 deletions(-)
+ create mode 100644 changes-entries/log-msec.txt
+
+diff --git a/include/util_time.h b/include/util_time.h
+index 1ba6353c025..c149e52166a 100644
+--- a/include/util_time.h
++++ b/include/util_time.h
+@@ -49,6 +49,8 @@ extern "C" {
+ #define AP_CTIME_OPTION_COMPACT 0x2
+ /* Add timezone offset from GMT ([+-]hhmm) */
+ #define AP_CTIME_OPTION_GMTOFF  0x4
++/* Add sub second timestamps with millisecond resolution */
++#define AP_CTIME_OPTION_MSEC    0x8
+ 
+ 
+ /**
+diff --git a/server/log.c b/server/log.c
+index 91dcf2c3eb0..d5236f45f86 100644
+--- a/server/log.c
++++ b/server/log.c
+@@ -585,9 +585,15 @@ static int log_ctime(const ap_errorlog_info *info, const char *arg,
+         if (arg[0] == 'u' && !arg[1]) { /* no ErrorLogFormat (fast path) */
+             option |= AP_CTIME_OPTION_USEC;
+         }
+-        else if (!ap_strchr_c(arg, '%')) { /* special "%{cuz}t" formats */
++        else if (arg[0] == 'm' && !arg[1]) { /* no ErrorLogFormat (fast path) - msec */
++            option |= AP_CTIME_OPTION_MSEC;
++        }
++        else if (!ap_strchr_c(arg, '%')) { /* special "%{mcuz}t" formats */
+             while (*arg) {
+                 switch (*arg++) {
++                case 'm':
++                    option |= AP_CTIME_OPTION_MSEC;
++                    break;
+                 case 'u':
+                     option |= AP_CTIME_OPTION_USEC;
+                     break;
+diff --git a/server/util_time.c b/server/util_time.c
+index 8dcf2fb293f..020fced8b10 100644
+--- a/server/util_time.c
++++ b/server/util_time.c
+@@ -24,6 +24,11 @@
+  *   */
+ #define AP_CTIME_USEC_LENGTH      7
+ 
++/* Number of characters needed to format the millisecond part of a timestamp.
++ * Milliseconds have 3 digits plus one separator character makes 4.
++ *   */
++#define AP_CTIME_MSEC_LENGTH      4
++
+ /* Length of ISO 8601 date/time (including trailing '\0') */
+ #define AP_CTIME_COMPACT_LEN      20
+ 
+@@ -184,6 +189,9 @@ AP_DECLARE(apr_status_t) ap_recent_ctime_ex(char *date_str, apr_time_t t,
+     if (option & AP_CTIME_OPTION_USEC) {
+         needed += AP_CTIME_USEC_LENGTH;
+     }
++    else if (option & AP_CTIME_OPTION_MSEC) {
++        needed += AP_CTIME_MSEC_LENGTH;
++    }
+ 
+     if (option & AP_CTIME_OPTION_GMTOFF) {
+         needed += AP_CTIME_GMTOFF_LEN;
+@@ -244,11 +252,16 @@ AP_DECLARE(apr_status_t) ap_recent_ctime_ex(char *date_str, apr_time_t t,
+     *date_str++ = ':';
+     *date_str++ = xt.tm_sec / 10 + '0';
+     *date_str++ = xt.tm_sec % 10 + '0';
+-    if (option & AP_CTIME_OPTION_USEC) {
++    if (option & (AP_CTIME_OPTION_USEC|AP_CTIME_OPTION_MSEC)) {
+         int div;
+         int usec = (int)xt.tm_usec;
+         *date_str++ = '.';
+-        for (div=100000; div>0; div=div/10) {
++        div = 100000;
++        if (!(option & AP_CTIME_OPTION_USEC)) {
++            usec = usec / 1000;
++            div = 100;
++        }
++        for (; div>0; div=div/10) {
+             *date_str++ = usec / div + '0';
+             usec = usec % div;
+         }

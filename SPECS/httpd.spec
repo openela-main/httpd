@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 4%{?dist}.3
+Release: 13%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -102,6 +102,8 @@ Patch34: httpd-2.4.62-proxy-ws-idle-timeout.patch
 Patch35: httpd-2.4.63-r1926064.patch
 # https://issues.redhat.com/browse/RHEL-106043
 Patch36: httpd-2.4.63-r1926317.patch
+# https://issues.redhat.com/browse/RHEL-145713
+Patch37: httpd-2.4.63-r1931452.patch
 
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
@@ -109,6 +111,10 @@ Patch60: httpd-2.4.43-enable-sslv3.patch
 Patch61: httpd-2.4.59-no-engine.patch
 # https://issues.redhat.com/browse/RHEL-99815
 Patch62: httpd-2.4.63-r1926107.patch
+# https://issues.redhat.com/browse/RHEL-122290
+Patch63: httpd-2.4.63-hcheck-stuck.patch
+# https://issues.redhat.com/browse/RHEL-131829
+Patch64: httpd-2.4.63-err-page-handling.patch
 
 # Security fixes
 #
@@ -128,6 +134,7 @@ Patch204: httpd-2.4.63-CVE-2025-66200.patch
 Patch205: httpd-2.4.63-CVE-2025-65082.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2419365
 Patch206: httpd-2.4.63-CVE-2025-58098.patch
+
 
 # Apache-2.0: everything
 # BSD-3-Clause: util_pcre.c, ap_regex.h
@@ -849,17 +856,31 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Wed Dec 10 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4.3
-- Resolves: RHEL-135052 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
+* Thu Feb 12 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-13
+- Resolves: RHEL-145713 - [RFE] Need miliseconds time stamp in ErrorLogFormat
+
+* Fri Jan 02 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-12
+- Resolves: RHEL-135053 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
   via AllowOverride FileInfo (CVE-2025-66200)
-- Resolves: RHEL-135035 - httpd: Apache HTTP Server: CGI environment variable
+- Resolves: RHEL-135036 - httpd: Apache HTTP Server: CGI environment variable
   override (CVE-2025-65082)
-- Resolves: RHEL-134467 - httpd: Apache HTTP Server: Server Side Includes adds
+- Resolves: RHEL-134468 - httpd: Apache HTTP Server: Server Side Includes adds
   query string to #exec cmd=... (CVE-2025-58098)
 
-* Thu Nov 06 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4.2
-- Resolves: RHEL-125894 - mod_ssl: allow more fine grained SSL SNI vhost check
+* Thu Dec 18 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-11
+- Resolves: RHEL-131829 - Fix error page messaging when error handling fails
+
+* Thu Nov 06 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-10
+- Resolves: RHEL-125880 - mod_ssl: allow more fine grained SSL SNI vhost check
   to avoid unnecessary 421 errors after CVE-2025-23048 fix
+
+* Fri Oct 24 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-6
+- Resolves: RHEL-122290 - mod_proxy_hcheck may stop healthchecks after a child
+  process is reclaimed
+
+* Mon Sep 08 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-5
+- Resolves: RHEL-92663 - Image mode: The dir /var/www is not created when
+  updating system in image mode
 
 * Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-4
 - Resolves: RHEL-99945 - httpd: HTTP Session Hijack via a TLS
