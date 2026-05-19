@@ -1,0 +1,74 @@
+From d56df32f2cb71de3762747aec70bef03d79096b6 Mon Sep 17 00:00:00 2001
+From: Jean-Frederic Clere <jfclere@gmail.com>
+Date: Tue, 5 Mar 2024 10:34:50 +0100
+Subject: [PATCH] When the error is broken (like missing error file) make sure
+ the error displays the right method and the correct Additionally message.
+
+---
+ modules/http/http_protocol.c | 11 +++++++----
+ modules/http/http_request.c  |  1 +
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/modules/http/http_protocol.c b/modules/http/http_protocol.c
+index f1ed1f6cc20..fbec4e61c65 100644
+--- a/modules/http/http_protocol.c
++++ b/modules/http/http_protocol.c
+@@ -963,6 +963,9 @@ static const char *get_canned_error_string(int status,
+ {
+     apr_pool_t *p = r->pool;
+     const char *error_notes, *h1, *s1;
++    const char *method = r->method;
++    if (r->subprocess_env && apr_table_get(r->subprocess_env, "REQUEST_METHOD"))
++        method =  apr_table_get(r->subprocess_env, "REQUEST_METHOD");
+ 
+     switch (status) {
+     case HTTP_MOVED_PERMANENTLY:
+@@ -1007,7 +1010,7 @@ static const char *get_canned_error_string(int status,
+     case HTTP_METHOD_NOT_ALLOWED:
+         return(apr_pstrcat(p,
+                            "<p>The requested method ",
+-                           ap_escape_html(r->pool, r->method),
++                           ap_escape_html(r->pool, method),
+                            " is not allowed for this URL.</p>\n",
+                            NULL));
+     case HTTP_NOT_ACCEPTABLE:
+@@ -1020,7 +1023,7 @@ static const char *get_canned_error_string(int status,
+     case HTTP_LENGTH_REQUIRED:
+         s1 = apr_pstrcat(p,
+                          "<p>A request of the requested method ",
+-                         ap_escape_html(r->pool, r->method),
++                         ap_escape_html(r->pool, method),
+                          " requires a valid Content-length.<br />\n",
+                          NULL);
+         return(add_optional_notes(r, s1, "error-notes", "</p>\n"));
+@@ -1030,7 +1033,7 @@ static const char *get_canned_error_string(int status,
+     case HTTP_NOT_IMPLEMENTED:
+         s1 = apr_pstrcat(p,
+                          "<p>",
+-                         ap_escape_html(r->pool, r->method),
++                         ap_escape_html(r->pool, method),
+                          " not supported for current URL.<br />\n",
+                          NULL);
+         return(add_optional_notes(r, s1, "error-notes", "</p>\n"));
+@@ -1052,7 +1055,7 @@ static const char *get_canned_error_string(int status,
+     case HTTP_REQUEST_ENTITY_TOO_LARGE:
+         return(apr_pstrcat(p,
+                            "The requested resource does not allow request data with ",
+-                           ap_escape_html(r->pool, r->method),
++                           ap_escape_html(r->pool, method),
+                            " requests, or the amount of data provided in\n"
+                            "the request exceeds the capacity limit.\n",
+                            NULL));
+diff --git a/modules/http/http_request.c b/modules/http/http_request.c
+index cb7af9cafb1..115f7035cf1 100644
+--- a/modules/http/http_request.c
++++ b/modules/http/http_request.c
+@@ -127,6 +127,7 @@ static void ap_die_r(int type, request_rec *r, int recursive_error)
+              */
+             update_r_in_filters(r_1st_err->proto_output_filters, r, r_1st_err);
+             update_r_in_filters(r_1st_err->input_filters, r, r_1st_err);
++            recursive_error = type;
+         }
+ 
+         custom_response = NULL; /* Do NOT retry the custom thing! */
+

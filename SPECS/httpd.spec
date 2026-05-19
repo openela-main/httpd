@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 7%{?dist}.3
+Release: 13%{?dist}
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -94,6 +94,8 @@ Patch35: httpd-2.4.57-r1912477+.patch
 Patch36: httpd-2.4.62-r1926064.patch
 # https://issues.redhat.com/browse/RHEL-106043
 Patch37: httpd-2.4.62-r1926317.patch
+# https://issues.redhat.com/browse/RHEL-129692
+Patch38: httpd-2.4.62-r1931452.patch
 
 # Bug fixes
 # https://bugzilla.redhat.com/show_bug.cgi?id=1397243
@@ -112,6 +114,8 @@ Patch105: httpd-2.4.62-r1922080.patch
 Patch106: httpd-2.4.62-r1926107.patch
 # https://issues.redhat.com/browse/RHEL-105446
 Patch107: httpd-2.4.62-hcheck-stuck.patch
+# https://issues.redhat.com/browse/RHEL-131827
+Patch108: httpd-2.4.62-err-page-handling.patch
 
 # Security fixes
 #
@@ -285,6 +289,7 @@ written in the Lua programming language.
 %patch35 -p1 -b .r1912477+
 %patch36 -p1 -b .r1926064
 %patch37 -p1 -b .r1926317
+%patch38 -p1 -b .r1931452
 
 %patch100 -p1 -b .enable-sslv3
 %patch101 -p1 -b .full-release
@@ -294,6 +299,7 @@ written in the Lua programming language.
 %patch105 -p1 -b .r1922080
 %patch106 -p1 -b .r1926107
 %patch107 -p1 -b .hcheck-stuck
+%patch108 -p1 -b .err-page-handling
 
 %patch200 -p1 -b .CVE-2025-23048
 %patch201 -p1 -b .CVE-2024-47252
@@ -867,22 +873,32 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
-* Fri Dec 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.3
-- Resolves: RHEL-135063 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
+* Thu Feb 12 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13
+- Resolves: RHEL-129692 - [RFE] Need miliseconds time stamp in ErrorLogFormat
+
+* Thu Jan 08 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-12
+- Resolves: RHEL-135064 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
   via AllowOverride FileInfo (CVE-2025-66200)
-- Resolves: RHEL-135048 - httpd: Apache HTTP Server: CGI environment variable
+- Resolves: RHEL-135049 - httpd: Apache HTTP Server: CGI environment variable
   override (CVE-2025-65082)
-- Resolves: RHEL-134480 - httpd: Apache HTTP Server: Server Side Includes adds
+- Resolves: RHEL-134481 - httpd: Apache HTTP Server: Server Side Includes adds
   query string to #exec cmd=... (CVE-2025-58098)
 
-* Wed Nov 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.2
-- Resolves: RHEL-123850 - mod_proxy_hcheck may stop healthchecks after a child
-  process is reclaimed
+* Fri Dec 19 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-11
+- Resolves: RHEL-131827 - Fix error page messaging when error handling fails
 
-* Tue Nov 11 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7.1
-- Resolves: RHEL-125884 - mod_ssl: allow more fine grained SSL SNI vhost check
+* Thu Nov 06 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-10
+- Resolves: RHEL-119000 - mod_ssl: allow more fine grained SSL SNI vhost check
   to avoid unnecessary 421 errors after CVE-2025-23048 fix
 - mod_ssl: add conf.d/snipolicy.conf to set 'SSLVHostSNIPolicy authonly' default
+
+* Fri Oct 24 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-9
+- Resolves: RHEL-105446 - mod_proxy_hcheck may stop healthchecks after a child
+  process is reclaimed
+
+* Mon Oct 13 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-8
+- Resolves: RHEL-114501 Image mode: The dir /var/www is not created when
+  updating system in image mode
 
 * Sat Aug 16 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-7
 - Resolves: RHEL-99815 - stickysession field does not work when specifying
