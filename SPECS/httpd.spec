@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 13%{?dist}
+Release: 13%{?dist}.1
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -135,7 +135,16 @@ Patch204: httpd-2.4.62-CVE-2025-66200.patch
 Patch205: httpd-2.4.62-CVE-2025-65082.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2419365
 Patch206: httpd-2.4.62-CVE-2025-58098.patch
-
+# https://bugzilla.redhat.com/show_bug.cgi?id=2466913
+Patch207: httpd-2.4.62-CVE-2026-28780.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2465299
+Patch208: httpd-2.4.62-CVE-2026-33007.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464953
+Patch209: httpd-2.4.62-CVE-2026-33857.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464952
+Patch210: httpd-2.4.62-CVE-2026-34032.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464940
+Patch211: httpd-2.4.62-CVE-2026-34059.patch
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -308,6 +317,11 @@ written in the Lua programming language.
 %patch204 -p1 -b .CVE-2025-66200
 %patch205 -p1 -b .CVE-2025-65082
 %patch206 -p1 -b .CVE-2025-58098
+%patch207 -p1 -b .CVE-2026-28780
+%patch208 -p1 -b .CVE-2026-33007
+%patch209 -p1 -b .CVE-2026-33857
+%patch210 -p1 -b .CVE-2026-34032
+%patch211 -p1 -b .CVE-2026-34059
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -873,6 +887,18 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Mon May 11 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13.1
+- Resolves: RHEL-173555 - httpd: Apache HTTP Server mod_proxy_ajp: Arbitrary
+  code execution via heap-based buffer overflow (CVE-2026-28780)
+- Resolves: RHEL-175080 - httpd: NULL pointer dereference can cause a child
+  process crash (CVE-2026-33007)
+- Resolves: RHEL-175100 - httpd: off-by-one out-of-bounds reads in AJP getter
+  functions (CVE-2026-33857)
+- Resolves: RHEL-175028 - httpd: heap-based buffer over-read due to missing
+  null-termination check (CVE-2026-34032)
+- Resolves: RHEL-175062 - httpd: heap-based buffer over-read and memory
+  disclosure in ajp_parse_data() (CVE-2026-34059)
+
 * Thu Feb 12 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13
 - Resolves: RHEL-129692 - [RFE] Need miliseconds time stamp in ErrorLogFormat
 
