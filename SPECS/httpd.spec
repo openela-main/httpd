@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.7
+Release: 65%{?dist}.8
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -299,6 +299,16 @@ Patch252: httpd-2.4.37-CVE-2025-66200.patch
 Patch253: httpd-2.4.37-CVE-2025-65082.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2419365
 Patch254: httpd-2.4.37-CVE-2025-58098.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2466913
+Patch255: httpd-2.4.37-CVE-2026-28780.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2465299
+Patch256: httpd-2.4.37-CVE-2026-33007.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464953
+Patch257: httpd-2.4.37-CVE-2026-33857.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464952
+Patch258: httpd-2.4.37-CVE-2026-34032.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2464940
+Patch259: httpd-2.4.37-CVE-2026-34059.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -543,6 +553,11 @@ interface for storing and accessing per-user session data.
 %patch252 -p1 -b .CVE-2025-66200
 %patch253 -p1 -b .CVE-2025-65082
 %patch254 -p1 -b .CVE-2025-58098
+%patch255 -p1 -b .CVE-2026-28780
+%patch256 -p1 -b .CVE-2026-33007
+%patch257 -p1 -b .CVE-2026-33857
+%patch258 -p1 -b .CVE-2026-34032
+%patch259 -p1 -b .CVE-2026-34059
 
 %patch96 -p1 -b .r1922080
 
@@ -1054,6 +1069,18 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue May 12 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.8
+- Resolves: RHEL-173558 - httpd:2.4/httpd: Apache HTTP Server mod_proxy_ajp:
+  Arbitrary code execution via heap-based buffer overflow (CVE-2026-28780)
+- Resolves: RHEL-175074 - httpd:2.4/httpd: NULL pointer dereference can
+  cause a child process crash (CVE-2026-33007)
+- Resolves: RHEL-175088 - httpd:2.4/httpd: off-by-one out-of-bounds reads
+  in AJP getter functions (CVE-2026-33857)
+- Resolves: RHEL-175620 - httpd:2.4/httpd: NULL pointer dereference via
+  specially crafted request (CVE-2026-29169)
+- Resolves: RHEL-175055 - httpd: heap-based buffer over-read and memory
+  disclosure in ajp_parse_data() (CVE-2026-34059)
+
 * Fri Dec 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.7
 - Resolves: RHEL-135054 - httpd: Apache HTTP Server: mod_userdir+suexec bypass
   via AllowOverride FileInfo (CVE-2025-66200)
