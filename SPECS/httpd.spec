@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 13%{?dist}.1
+Release: 13%{?dist}.4
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -144,6 +144,27 @@ Patch209: httpd-2.4.63-CVE-2026-33857.patch
 Patch210: httpd-2.4.63-CVE-2026-34032.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2464940
 Patch211: httpd-2.4.63-CVE-2026-34059.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486395
+Patch212: httpd-2.4.63-CVE-2026-34356.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486411
+Patch213: httpd-2.4.63-CVE-2026-42536.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486414
+Patch214: httpd-2.4.63-CVE-2026-34355.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486397
+Patch215: httpd-2.4.63-CVE-2026-44185.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486399
+Patch216: httpd-2.4.63-CVE-2026-44631.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374549
+Patch217: httpd-2.4.63-CVE-2024-42516.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2465296
+Patch218: httpd-2.4.63-CVE-2026-29169.patch
+Patch219: httpd-2.4.63-CVE-2026-43951.patch
+Patch220: httpd-2.4.63-CVE-2026-44119.patch
+Patch221: httpd-2.4.63-CVE-2026-42535.patch
+Patch222: httpd-2.4.63-CVE-2026-24072.patch
+Patch223: httpd-2.4.63-CVE-2026-33006.patch
+Patch224: httpd-2.4.63-CVE-2026-44186.patch
+
 
 # Apache-2.0: everything
 # BSD-3-Clause: util_pcre.c, ap_regex.h
@@ -865,6 +886,24 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue Jun 23 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-13.4
+- Resolves: RHEL-186221 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
+  via malicious backend servers (CVE-2026-34356)
+- Resolves: RHEL-186195 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
+  via untrusted content in mod_xml2enc (CVE-2026-42536)
+- Resolves: RHEL-186182 - httpd: Apache HTTP Server: Buffer overflow in
+  mod_proxy_html allows security bypass (CVE-2026-34355)
+- Resolves: RHEL-186158 - httpd: Apache HTTP Server: Buffer Over-read via
+  outbound OCSP requests to attacker-controlled server (CVE-2026-44185)
+- Resolves: RHEL-184305 - httpd: Apache HTTP Server: Denial of Service via
+  crafted regular expressions (CVE-2026-44631)
+- Resolves : RHEL-182581 - httpd: incomplete fix for 
+  CVE-2023-38709 (CVE-2024-42516)
+- Resolves: RHEL-175621 - httpd: NULL pointer dereference via specially crafted
+  request (CVE-2026-29169)
+- Also addresses CVE-2026-44119, CVE-2026-44186, CVE-2026-42535,
+  CVE-2026-24072, CVE-2026-33006, CVE-2026-43951
+
 * Mon May 11 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-13.1
 - Resolves: RHEL-173549 - httpd: Apache HTTP Server mod_proxy_ajp: Arbitrary
   code execution via heap-based buffer overflow (CVE-2026-28780)
