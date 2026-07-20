@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 13%{?dist}.1
+Release: 13%{?dist}.5
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -145,6 +145,24 @@ Patch209: httpd-2.4.62-CVE-2026-33857.patch
 Patch210: httpd-2.4.62-CVE-2026-34032.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2464940
 Patch211: httpd-2.4.62-CVE-2026-34059.patch
+# https://github.com/apache/httpd/commit/7d9f3cfb10b0fe70df7358d26d7b1f374ea1a0cb
+Patch212: httpd-2.4.62-CVE-2026-44631.patch
+# https://github.com/apache/httpd/commit/d62fc375281486c6036b007ac349b25d4e6edb4a
+Patch213: httpd-2.4.62-CVE-2026-34355.patch
+# https://github.com/apache/httpd/commit/225dc070adba11040b774cf641e1d8bc79941643
+Patch214: httpd-2.4.62-CVE-2026-29169.patch
+# https://github.com/apache/httpd/commit/fa5d85bbc832a587c3c5bca7c19fb21df96b5df0
+Patch215: httpd-2.4.62-CVE-2026-42536.patch
+# https://github.com/apache/httpd/commit/2c5ee792f5d37d951b86c24db37035705a1b0c46
+Patch216: httpd-2.4.62-CVE-2026-44185.patch
+Patch217: httpd-2.4.62-CVE-2026-34356.patch
+Patch218: httpd-2.4.62-CVE-2024-42516.patch
+Patch219: httpd-2.4.62-CVE-2026-24072.patch
+Patch220: httpd-2.4.62-CVE-2026-33006.patch
+Patch221: httpd-2.4.62-CVE-2026-42535.patch
+Patch222: httpd-2.4.62-CVE-2026-43951.patch
+Patch223: httpd-2.4.62-CVE-2026-44119.patch
+Patch224: httpd-2.4.62-CVE-2026-44186.patch
 
 License: ASL 2.0
 BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
@@ -322,6 +340,19 @@ written in the Lua programming language.
 %patch209 -p1 -b .CVE-2026-33857
 %patch210 -p1 -b .CVE-2026-34032
 %patch211 -p1 -b .CVE-2026-34059
+%patch212 -p1 -b .CVE-2026-44631
+%patch213 -p1 -b .CVE-2026-34355
+%patch214 -p1 -b .CVE-2026-29169
+%patch215 -p1 -b .CVE-2026-42536
+%patch216 -p1 -b .CVE-2026-44185
+%patch217 -p1 -b .CVE-2026-34356
+%patch218 -p1 -b .CVE-2024-42516
+%patch219 -p1 -b .CVE-2026-24072
+%patch220 -p1 -b .CVE-2026-33006
+%patch221 -p1 -b .CVE-2026-42535
+%patch222 -p1 -b .CVE-2026-43951
+%patch223 -p1 -b .CVE-2026-44119
+%patch224 -p1 -b .CVE-2026-44186
 
 # Patch in the vendor string
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
@@ -887,6 +918,31 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Jul 09 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13.5
+- Resolves: RHEL-192752 - mod_proxy_html regression in CVE-2026-34355 fix
+
+* Tue Jun 30 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13.4
+- Resolves: RHEL-186217 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
+  via malicious backend servers (CVE-2026-34356)
+- Resolves: RHEL-182578 - httpd: incomplete fix
+  for CVE-2023-38709 (CVE-2024-42516)
+- Also addresses CVE-2026-24072, CVE-2026-33006, CVE-2026-42535, CVE-2026-43951,
+  CVE-2026-44119, CVE-2026-44186
+
+* Fri Jun 26 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 2.4.62-13.3
+- Resolves: RHEL-186186 - httpd: mod_proxy_html buffer handling
+  vulnerability (CVE-2026-34355)
+- Resolves: RHEL-175636 - httpd: mod_dav_lock uses wrong lock discovery
+  (CVE-2026-29169)
+- Resolves: RHEL-186196 - mod_xml2enc: fix bblen accounting in fix_skipto
+  (CVE-2026-42536)
+- Resolves: RHEL-186164 - httpd: fix OCSP write buffer advancement
+  bug in mod_ssl (CVE-2026-44185)
+
+* Wed Jun 24 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 2.4.62-13.2
+- Resolves: RHEL-184312 - httpd: ap_regname restrict to reasonable captures
+  (CVE-2026-44631)
+
 * Mon May 11 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.62-13.1
 - Resolves: RHEL-173555 - httpd: Apache HTTP Server mod_proxy_ajp: Arbitrary
   code execution via heap-based buffer overflow (CVE-2026-28780)
