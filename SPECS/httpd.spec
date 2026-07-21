@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.8
+Release: 65%{?dist}.9
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -309,6 +309,24 @@ Patch257: httpd-2.4.37-CVE-2026-33857.patch
 Patch258: httpd-2.4.37-CVE-2026-34032.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2464940
 Patch259: httpd-2.4.37-CVE-2026-34059.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486411
+Patch260: httpd-2.4.37-CVE-2026-42536.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486397
+Patch261: httpd-2.4.37-CVE-2026-44185.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2465296
+Patch262: httpd-2.4.37-CVE-2026-29169.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486414
+Patch263: httpd-2.4.37-CVE-2026-34355.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486402
+Patch264: httpd-2.4.37-CVE-2026-44186.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486395
+Patch265: httpd-2.4.37-CVE-2026-34356.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486415
+Patch266: httpd-2.4.37-CVE-2026-43951.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486399
+Patch267: httpd-2.4.37-CVE-2026-44631.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2374549
+Patch268: httpd-2.4.37-CVE-2024-42516.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -558,6 +576,15 @@ interface for storing and accessing per-user session data.
 %patch257 -p1 -b .CVE-2026-33857
 %patch258 -p1 -b .CVE-2026-34032
 %patch259 -p1 -b .CVE-2026-34059
+%patch260 -p1 -b .CVE-2026-42536
+%patch261 -p1 -b .CVE-2026-44185
+%patch262 -p1 -b .CVE-2026-29169
+%patch263 -p1 -b .CVE-2026-34355
+%patch264 -p1 -b .CVE-2026-44186
+%patch265 -p1 -b .CVE-2026-34356
+%patch266 -p1 -b .CVE-2026-43951
+%patch267 -p1 -b .CVE-2026-44631
+%patch268 -p1 -b .CVE-2024-42516
 
 %patch96 -p1 -b .r1922080
 
@@ -1069,6 +1096,27 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Jul 09 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.9
+- Resolves: RHEL-186198 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
+  via untrusted content in mod_xml2enc (CVE-2026-42536)
+- Resolves: RHEL-186166 - httpd: Apache HTTP Server: Buffer Over-read via
+  outbound OCSP requests to attacker-controlled server (CVE-2026-44185)
+- Resolves: RHEL-175620 - httpd:2.4/httpd: NULL pointer dereference via
+  specially crafted request (CVE-2026-29169)
+- Resolves: RHEL-186176 - httpd: Apache HTTP Server: Buffer overflow in
+  mod_proxy_html allows security bypass (CVE-2026-34355)
+- Resolves: RHEL-192751 - mod_proxy_html regression in CVE-2026-34355 fix
+- Resolves: RHEL-193114 - httpd: Apache HTTP Server: Denial of Service
+  in mod_proxy_ftp via attacker-controlled FTP server (CVE-2026-44186)
+- Resolves: RHEL-186219 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
+  via malicious backend servers (CVE-2026-34356)
+- Resolves: RHEL-191243 - httpd: Apache HTTP Server: Out-of-bounds Read in
+  mod_headers and mod_mime (CVE-2026-43951)
+- Resolves: RHEL-184307 - httpd: Apache HTTP Server: Denial of Service via
+  crafted regular expressions (CVE-2026-44631)
+- Resolves: RHEL-182577 - httpd: incomplete fix
+  for CVE-2023-38709 (CVE-2024-42516)
+
 * Tue May 12 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.8
 - Resolves: RHEL-173558 - httpd:2.4/httpd: Apache HTTP Server mod_proxy_ajp:
   Arbitrary code execution via heap-based buffer overflow (CVE-2026-28780)
