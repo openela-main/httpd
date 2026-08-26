@@ -25,7 +25,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.63
-Release: 13%{?dist}.5
+Release: 13%{?dist}.6
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source1: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2.asc
@@ -164,6 +164,7 @@ Patch221: httpd-2.4.63-CVE-2026-42535.patch
 Patch222: httpd-2.4.63-CVE-2026-24072.patch
 Patch223: httpd-2.4.63-CVE-2026-33006.patch
 Patch224: httpd-2.4.63-CVE-2026-44186.patch
+Patch225: httpd-2.4.63-CVE-2026-29167.patch
 
 
 # Apache-2.0: everything
@@ -886,6 +887,11 @@ exit $rv
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Thu Aug 20 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-13.6
+- Resolves: RHEL-190812 - httpd: Apache HTTP Server: Arbitrary code execution
+  or denial of service via use-after-free in mod_ldap per-directory
+  configuration (CVE-2026-29167)
+
 * Thu Jul 09 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.63-13.5
 - Resolves: RHEL-192750 - mod_proxy_html regression in CVE-2026-34355 fix
 
