@@ -14,7 +14,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.37
-Release: 65%{?dist}.9
+Release: 65%{?dist}.10
 URL: https://httpd.apache.org/
 Source0: https://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
 Source2: httpd.logrotate
@@ -327,6 +327,8 @@ Patch266: httpd-2.4.37-CVE-2026-43951.patch
 Patch267: httpd-2.4.37-CVE-2026-44631.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2374549
 Patch268: httpd-2.4.37-CVE-2024-42516.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2486394
+Patch269: httpd-2.4.37-CVE-2026-29167.patch
 
 License: ASL 2.0
 Group: System Environment/Daemons
@@ -585,6 +587,7 @@ interface for storing and accessing per-user session data.
 %patch266 -p1 -b .CVE-2026-43951
 %patch267 -p1 -b .CVE-2026-44631
 %patch268 -p1 -b .CVE-2024-42516
+%patch269 -p1 -b .CVE-2026-29167
 
 %patch96 -p1 -b .r1922080
 
@@ -1096,6 +1099,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_rpmconfigdir}/macros.d/macros.httpd
 
 %changelog
+* Tue Aug 25 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.10
+- Resolves: RHEL-190817 - httpd: Apache HTTP Server: Arbitrary code
+  execution or denial of service via use-after-free in mod_ldap per-directory
+  configuration (CVE-2026-29167)
+
 * Thu Jul 09 2026 Luboš Uhliarik <luhliari@redhat.com> - 2.4.37-65.9
 - Resolves: RHEL-186198 - httpd: Apache HTTP Server: Heap-based Buffer Overflow
   via untrusted content in mod_xml2enc (CVE-2026-42536)
